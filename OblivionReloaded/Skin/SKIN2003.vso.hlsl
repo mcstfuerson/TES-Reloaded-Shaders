@@ -15,7 +15,7 @@ row_major float4x4 ShadowProj : register(c28);
 float4 ShadowProjData : register(c32);
 float4 ShadowProjTransform : register(c33);
 row_major float4x4 SkinModelViewProj : register(c1);
-row_major float4x4 TESR_ShadowCameraToLightTransform : register(c34);
+row_major float4x4 TESR_ShadowCameraToLightTransform[2] : register(c34);
 //
 //
 // Registers:
@@ -61,8 +61,9 @@ struct VS_OUTPUT {
     float4 Position : POSITION;
     float2 BaseUV : TEXCOORD0;
     float3 Light0Dir : TEXCOORD1;
-    float3 CameraDir : TEXCOORD6;
-    float4 ShadowUV : TEXCOORD7;
+    float3 CameraDir : TEXCOORD5;
+	float4 ShadowUV0 : TEXCOORD6;
+    float4 ShadowUV1 : TEXCOORD7;
 };
 
 // Code:
@@ -77,7 +78,6 @@ VS_OUTPUT main(VS_INPUT IN) {
 
     float3 eye40;
     float3 m91;
-    float4 m97;
     float4 mdl41;
     float4 offset;
     float1 q0;
@@ -138,20 +138,17 @@ VS_OUTPUT main(VS_INPUT IN) {
     q19.xyz = (IN.blendweight.z * q18.xyz) + ((IN.blendweight.x * q17.xyz) + (q16.xyz * IN.blendweight.y));
     r0.xyz = (q0.x * q20.xyz) + q19.xyz;
     mdl41 = mul(SkinModelViewProj, r0.xyzw);
-    m97 = mul(mdl41, TESR_ShadowCameraToLightTransform);
     eye40.xyz = mul(float3x3(q26.xyz, q32.xyz, q38.xyz), normalize(EyePosition.xyz - r0.xyz));
 
     OUT.Color.rgba = IN.Color.rgba;
-
     OUT.Fog.rgb = FogColor.rgb;
     OUT.Fog.a = 1 - saturate((FogParam.x - length(mdl41.xyz)) / FogParam.y);
-
     OUT.Position = mdl41;
     OUT.BaseUV.xy = IN.BaseUV.xy;
     OUT.Light0Dir.xyz = normalize(m91.xyz);
     OUT.CameraDir.xyz = normalize(eye40.xyz);
-    OUT.ShadowUV = m97;
-
+    OUT.ShadowUV0 = mul(mdl41, TESR_ShadowCameraToLightTransform[0]);
+	OUT.ShadowUV1 = mul(mdl41, TESR_ShadowCameraToLightTransform[1]);
     return OUT;
 };
 

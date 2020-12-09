@@ -17,6 +17,7 @@ sampler2D BaseMap : register(s0);
 sampler2D NormalMap : register(s1);
 sampler2D AttenuationMap : register(s5);
 samplerCUBE TESR_ShadowCubeMapBuffer0 : register(s8) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; ADDRESSW = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
+samplerCUBE TESR_ShadowCubeMapBuffer1 : register(s9) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; ADDRESSW = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
 
 // Registers:
 //
@@ -81,6 +82,7 @@ PS_OUTPUT main(VS_OUTPUT IN) {
     q6.xyz = (Toggles.x <= 0.0 ? r0.xyz : (r0.xyz * IN.LCOLOR_0.xyz));
 	r4.xyz = shades(q0.xyz, IN.texcoord_1.xyz) * PSLightColor[0].rgb;
 	Shadow = GetLightAmount(TESR_ShadowCubeMapBuffer0, IN.texcoord_7, TESR_ShadowLightPosition[0], TESR_ShadowCubeMapFarPlanes.x);
+	if (TESR_ShadowLightPosition[1].w) Shadow *= GetLightAmount(TESR_ShadowCubeMapBuffer1, IN.texcoord_7, TESR_ShadowLightPosition[1], TESR_ShadowCubeMapFarPlanes.y);
     q4.xyz = Shadow * max(r4.xyz + q3.xyz + AmbientColor.rgb, 0);
     q7.xyz = q4.xyz * q6.xyz;
     q8.xyz = (Toggles.y <= 0.0 ? q7.xyz : ((IN.LCOLOR_1.w * (IN.LCOLOR_1.xyz - (q6.xyz * q4.xyz))) + q7.xyz));

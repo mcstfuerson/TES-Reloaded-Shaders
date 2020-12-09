@@ -14,7 +14,7 @@ row_major float4x4 ModelViewProj : register(c0);
 row_major float4x4 ShadowProj : register(c28);
 float4 ShadowProjData : register(c32);
 float4 ShadowProjTransform : register(c33);
-row_major float4x4 TESR_ShadowCameraToLightTransform : register(c34);
+row_major float4x4 TESR_ShadowCameraToLightTransform[2] : register(c34);
 //
 //
 // Registers:
@@ -57,8 +57,9 @@ struct VS_OUTPUT {
     float4 Position : POSITION;
     float2 BaseUV : TEXCOORD0;
     float3 Light0Dir : TEXCOORD1;
-    float3 CameraDir : TEXCOORD6;
-    float4 ShadowUV : TEXCOORD7;
+    float3 CameraDir : TEXCOORD5;
+	float4 ShadowUV0 : TEXCOORD6;
+    float4 ShadowUV1 : TEXCOORD7;
 };
 
 // Code:
@@ -66,23 +67,18 @@ struct VS_OUTPUT {
 VS_OUTPUT main(VS_INPUT IN) {
     VS_OUTPUT OUT;
 
-    float4 m14;
     float4 mdl9;
 
     mdl9 = mul(ModelViewProj, IN.Position.xyzw);
-	m14 = mul(mdl9, TESR_ShadowCameraToLightTransform);
-
     OUT.Color.rgba = IN.Color.rgba;
-	
     OUT.Fog.a = 1 - saturate((FogParam.x - length(mdl9.xyz)) / FogParam.y);
     OUT.Fog.rgb = FogColor.rgb;
-
     OUT.Position = mdl9;
     OUT.BaseUV.xy = IN.BaseUV.xy;
     OUT.Light0Dir.xyz = normalize(mul(TanSpaceProj, LightDirection[0].xyz));
     OUT.CameraDir.xyz = normalize(mul(TanSpaceProj, normalize(EyePosition.xyz - IN.Position.xyz)));
-    OUT.ShadowUV = m14;
-
+    OUT.ShadowUV0 = mul(mdl9, TESR_ShadowCameraToLightTransform[0]);
+	OUT.ShadowUV1 = mul(mdl9, TESR_ShadowCameraToLightTransform[1]);
     return OUT;
 };
 

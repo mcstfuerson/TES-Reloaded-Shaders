@@ -13,7 +13,7 @@ row_major float4x4 ModelViewProj : register(c0);
 row_major float4x4 ShadowProj : register(c28);
 float4 ShadowProjData : register(c32);
 float4 ShadowProjTransform : register(c33);
-row_major float4x4 TESR_ShadowCameraToLightTransform : register(c34);
+row_major float4x4 TESR_ShadowCameraToLightTransform[2] : register(c34);
 //
 //
 // Registers:
@@ -53,13 +53,13 @@ struct VS_INPUT {
 struct VS_OUTPUT {
     float4 Position : POSITION;
     float2 BaseUV : TEXCOORD0;
-    float3 Light0Dir : TEXCOORD1;
-    float3 Light1Dir : TEXCOORD2;
-    float3 Light2Dir : TEXCOORD3;
+    float4 Light0Dir : TEXCOORD1;
+    float4 Light1Dir : TEXCOORD2;
+    float4 Light2Dir : TEXCOORD3;
     float4 Att1UV : TEXCOORD4;
     float4 Att2UV : TEXCOORD5;
-    float4 texcoord_6 : TEXCOORD6;
-    float3 CameraDir : TEXCOORD7;
+    float4 ShadowUV0 : TEXCOORD6;
+	float4 ShadowUV1 : TEXCOORD7;
 };
 
 // Code:
@@ -73,24 +73,26 @@ VS_OUTPUT main(VS_INPUT IN) {
     float3 lit1;
     float3 lit3;
     float4 m28;
-    float4 r0;
-
+	float3 camera;
+	
     m28 = mul(ModelViewProj, IN.Position.xyzw);
-	r0 = mul(m28, TESR_ShadowCameraToLightTransform);
     lit3.xyz = LightPosition[2].xyz - IN.Position.xyz;
     lit1.xyz = LightPosition[1].xyz - IN.Position.xyz;
 	OUT.Position = m28;
     OUT.BaseUV.xy = IN.BaseUV.xy;
     OUT.Light0Dir.xyz = normalize(mul(TanSpaceProj, LightDirection[0].xyz));
-    OUT.Light1Dir.xyz = mul(TanSpaceProj, normalize(lit1.xyz));
-    OUT.Light2Dir.xyz = mul(TanSpaceProj, normalize(lit3.xyz));
+    OUT.Light1Dir.xyz = normalize(mul(TanSpaceProj, lit1.xyz));
+    OUT.Light2Dir.xyz = normalize(mul(TanSpaceProj, lit3.xyz));
+	camera.xyz = normalize(mul(TanSpaceProj, normalize(EyePosition.xyz - IN.Position.xyz)));
+	OUT.Light0Dir.w = camera.x;
+	OUT.Light1Dir.w = camera.y;
+	OUT.Light2Dir.w = camera.z;
     OUT.Att1UV.w = 0.5;
     OUT.Att1UV.xyz = compress(lit1.xyz / LightPosition[1].w);
     OUT.Att2UV.w = 0.5;
     OUT.Att2UV.xyz = compress(lit3.xyz / LightPosition[2].w);
-    OUT.texcoord_6 = r0;
-    OUT.CameraDir.xyz = normalize(mul(TanSpaceProj, normalize(EyePosition.xyz - IN.Position.xyz)));
-
+    OUT.ShadowUV0 = mul(m28, TESR_ShadowCameraToLightTransform[0]);
+	OUT.ShadowUV1 = mul(m28, TESR_ShadowCameraToLightTransform[1]);
     return OUT;
 };
 

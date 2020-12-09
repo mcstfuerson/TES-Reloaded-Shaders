@@ -15,7 +15,8 @@ sampler2D ShadowMap : register(s6);
 sampler2D ShadowMaskMap : register(s7);
 float4 Toggles : register(c7);
 float4 TESR_ShadowData : register(c10);
-sampler2D TESR_ShadowMapBuffer : register(s8) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
+sampler2D TESR_ShadowMapBufferNear : register(s8) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
+sampler2D TESR_ShadowMapBufferFar : register(s9) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
 //
 //
 // Registers:
@@ -42,8 +43,9 @@ struct VS_OUTPUT {
     float3 Light0Dir : TEXCOORD1_centroid;
     float3 Light1Dir : TEXCOORD2_centroid;
     float4 Att1UV : TEXCOORD4;
-    float3 CameraDir : TEXCOORD6_centroid;
-    float4 ShadowUV : TEXCOORD7;
+    float3 CameraDir : TEXCOORD5_centroid;
+    float4 ShadowUV0 : TEXCOORD6;
+	float4 ShadowUV1 : TEXCOORD7;
     float3 Color : COLOR0;
     float4 Fog : COLOR1;
 };
@@ -89,7 +91,7 @@ PS_OUTPUT main(VS_OUTPUT IN) {
 
     /* modifying shader --------------------------------------- */
 
-    psParallax(IN, uv, ao);
+    psParallax(IN.BaseUV, IN.CameraDir, uv, ao);
 
     /* fetch Base/Normal from parallaxed position */
     r0.rgb = tex2D(TESR_samplerBaseMap, uv.xy).rgb;
@@ -100,9 +102,9 @@ PS_OUTPUT main(VS_OUTPUT IN) {
     att0.x = tex2D(AttenuationMap, IN.Att1UV.xy).x;
 
     q4.xyz = normalize(expand(nm.xyz));
-    q14.xyz = saturate((1 - att0.x) - att13.x) * (shades(q4.xyz, normalize(IN.Light1Dir.xyz)) * PSLightColor[1].rgb);
+    q14.xyz = saturate((1 - att0.x) - att13.x) * (shades(q4.xyz, IN.Light1Dir.xyz) * PSLightColor[1].rgb);
     q7.xyz = (Toggles.x <= 0.0 ? r0.xyz : (r0.xyz * IN.Color.rgb));
-    q5.xyz = (GetLightAmount(IN.ShadowUV) * (shades(q4.xyz, IN.Light0Dir.xyz) * PSLightColor[0].rgb)) + q14.xyz;
+    q5.xyz = (GetLightAmount(IN.ShadowUV0, IN.ShadowUV1) * (shades(q4.xyz, IN.Light0Dir.xyz) * PSLightColor[0].rgb)) + q14.xyz;
     q6.xyz = max(q5.xyz + AmbientColor.rgb, 0);
     q8.xyz = q6.xyz * q7.xyz * ao;
     q9.xyz = (Toggles.y <= 0.0 ? q8.xyz : ((IN.Fog.a * (IN.Fog.rgb - (q7.xyz * q6.xyz))) + q8.xyz));

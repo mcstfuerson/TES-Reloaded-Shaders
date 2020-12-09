@@ -20,7 +20,8 @@ sampler2D FaceGenMap1 : register(s3);
 sampler2D AttenuationMap : register(s5);
 sampler2D ShadowMap : register(s6);
 sampler2D ShadowMaskMap : register(s7);
-sampler2D TESR_ShadowMapBuffer : register(s8) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
+sampler2D TESR_ShadowMapBufferNear : register(s8) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
+sampler2D TESR_ShadowMapBufferFar : register(s9) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
 //
 //
 // Registers:
@@ -48,8 +49,9 @@ struct VS_OUTPUT {
     float3 Light0Dir : TEXCOORD1_centroid;
     float3 Light1Dir : TEXCOORD2_centroid;
     float4 Att1UV : TEXCOORD4;
-    float3 CameraDir : TEXCOORD6_centroid;
-    float4 ShadowUV : TEXCOORD7;
+    float3 CameraDir : TEXCOORD5_centroid;
+	float4 ShadowUV0 : TEXCOORD6;
+    float4 ShadowUV1 : TEXCOORD7;
     float3 Color : COLOR0;
     float4 Fog : COLOR1;
 };
@@ -97,18 +99,18 @@ PS_OUTPUT main(VS_OUTPUT IN) {
     r0 = tex2D(BaseMap, IN.BaseUV.xy);
     att4 = tex2D(AttenuationMap, IN.Att1UV.xy).x;
     att23 = tex2D(AttenuationMap, IN.Att1UV.zw).x;
-	camera = normalize(IN.CameraDir.xyz);
+	camera = IN.CameraDir.xyz;
 	q27 = 2 * ((2 * r2) * (expand(r1) + r0.xyz));
     q6 = 1 - shade(norm, camera);
     q7 = q6 * sqr(q6);
-	q11.xyz = (shade(norm.xyz,           IN.Light0Dir.xyz ) * PSLightColor[0].rgb) + ((q7.x * PSLightColor[0].rgb) * 0.5);
-    q10.xyz = (shade(norm.xyz, normalize(IN.Light1Dir.xyz)) * PSLightColor[1].rgb) + ((q7.x * PSLightColor[1].rgb) * 0.5);
+	q11.xyz = (shade(norm.xyz, IN.Light0Dir.xyz) * PSLightColor[0].rgb) + ((q7.x * PSLightColor[0].rgb) * 0.5);
+    q10.xyz = (shade(norm.xyz, IN.Light1Dir.xyz) * PSLightColor[1].rgb) + ((q7.x * PSLightColor[1].rgb) * 0.5);
     
     q11 = psSkin(q11, PSLightColor[0].rgb, camera, IN.Light0Dir.xyz, norm);
     q10 = psSkin(q10, PSLightColor[1].rgb, camera, IN.Light1Dir.xyz, norm);
 
     r5  = saturate(1 - att4 - att23) * q10;
-    r5 += GetLightAmountSkin(IN.ShadowUV) * q11;
+    r5 += GetLightAmountSkin(IN.ShadowUV0, IN.ShadowUV1) * q11;
     q12 = max(r5 + AmbientColor.rgb, 0);
     q9 = (Toggles.x <= 0.0 ? q27 : (q27 * IN.Color.rgb));
     q13 = q12 * q9;

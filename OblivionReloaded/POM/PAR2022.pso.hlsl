@@ -55,7 +55,7 @@ PS_OUTPUT main(VS_OUTPUT IN) {
 
     /* modifying shader --------------------------------------- */
 
-    psParallax(IN, uv, ao);
+    psParallax(IN.BaseUV, IN.CameraDir, uv, ao);
 
     /* fetch Base from parallaxed position */
     r0.rgb = tex2D(TESR_samplerBaseMap, uv.xy).rgb;

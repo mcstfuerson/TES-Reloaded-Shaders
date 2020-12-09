@@ -17,7 +17,8 @@ sampler2D NormalMap : register(s1);
 sampler2D AttenuationMap : register(s4);
 sampler2D ShadowMap : register(s5);
 sampler2D ShadowMaskMap : register(s6);
-sampler2D TESR_ShadowMapBuffer : register(s8) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
+sampler2D TESR_ShadowMapBufferNear : register(s8) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
+sampler2D TESR_ShadowMapBufferFar : register(s9) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
 //
 //
 // Registers:
@@ -40,13 +41,13 @@ sampler2D TESR_ShadowMapBuffer : register(s8) = sampler_state { ADDRESSU = CLAMP
 
 struct VS_OUTPUT {
     float2 BaseUV : TEXCOORD0;
-    float3 Light0Dir : TEXCOORD1_centroid;
-    float3 Light1Dir : TEXCOORD2_centroid;
-    float3 Light2Dir : TEXCOORD3_centroid;
+    float4 Light0Dir : TEXCOORD1_centroid;
+    float4 Light1Dir : TEXCOORD2_centroid;
+    float4 Light2Dir : TEXCOORD3_centroid;
     float4 Att1UV : TEXCOORD4;
     float4 Att2UV : TEXCOORD5;
-    float3 CameraDir : TEXCOORD7_centroid;
-    float4 ShadowUV : TEXCOORD6;
+    float4 ShadowUV0 : TEXCOORD6;
+	float4 ShadowUV1 : TEXCOORD7;
 };
 
 struct PS_OUTPUT {
@@ -73,7 +74,7 @@ PS_OUTPUT main(VS_OUTPUT IN) {
     float att15;
     float att2;
     float3 norm;
-	float3 camera;
+	float3 camera = { IN.Light0Dir.w, IN.Light1Dir.w, IN.Light2Dir.w };
     float3 q1;
     float3 q10;
     float3 q12;
@@ -89,18 +90,17 @@ PS_OUTPUT main(VS_OUTPUT IN) {
     att13 = tex2D(AttenuationMap, IN.Att2UV.xy).x;
     att2 = tex2D(AttenuationMap, IN.Att1UV.xy).x;
     att14 = tex2D(AttenuationMap, IN.Att1UV.zw).x;
-	camera = normalize(IN.CameraDir.xyz);
     q6 = 1 - shade(norm, camera);
     q7 = q6 * sqr(q6);
-	q10 = (shade(norm,           IN.Light0Dir.xyz ) * PSLightColor[0].rgb) + ((q7 * PSLightColor[0].rgb) * 0.5);
-	q9  = (shade(norm, normalize(IN.Light1Dir.xyz)) * PSLightColor[1].rgb) + ((q7 * PSLightColor[1].rgb) * 0.5);
-    q12 = (shade(norm, normalize(IN.Light2Dir.xyz)) * PSLightColor[2].rgb) + ((q7 * PSLightColor[2].rgb) * 0.5);            
+	q10 = (shade(norm, IN.Light0Dir.xyz) * PSLightColor[0].rgb) + ((q7 * PSLightColor[0].rgb) * 0.5);
+	q9  = (shade(norm, IN.Light1Dir.xyz) * PSLightColor[1].rgb) + ((q7 * PSLightColor[1].rgb) * 0.5);
+    q12 = (shade(norm, IN.Light2Dir.xyz) * PSLightColor[2].rgb) + ((q7 * PSLightColor[2].rgb) * 0.5);            
 
     q10 = psSkin(q10, PSLightColor[0].rgb, camera, IN.Light0Dir.xyz, norm);
     q9  = psSkin(q9,  PSLightColor[1].rgb, camera, IN.Light1Dir.xyz, norm);
     q12 = psSkin(q12, PSLightColor[2].rgb, camera, IN.Light2Dir.xyz, norm);
 
-    q27  = GetLightAmountSkin(IN.ShadowUV) * q10;
+    q27  = GetLightAmountSkin(IN.ShadowUV0, IN.ShadowUV1) * q10;
     q27 += saturate(1 - att13 - att15) * q12;
     q27 += saturate(1 - att2  - att14) * q9;
 

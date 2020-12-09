@@ -14,7 +14,7 @@ row_major float4x4 ShadowProj : register(c28);
 float4 ShadowProjData : register(c32);
 float4 ShadowProjTransform : register(c33);
 row_major float4x4 SkinModelViewProj : register(c1);
-row_major float4x4 TESR_ShadowCameraToLightTransform : register(c34);
+row_major float4x4 TESR_ShadowCameraToLightTransform[2] : register(c34);
 //
 //
 // Registers:
@@ -57,13 +57,13 @@ struct VS_INPUT {
 struct VS_OUTPUT {
     float4 Position : POSITION;
     float2 BaseUV : TEXCOORD0;
-    float3 Light0Dir : TEXCOORD1;
-    float3 Light1Dir : TEXCOORD2;
-    float3 Light2Dir : TEXCOORD3;
+    float4 Light0Dir : TEXCOORD1;
+    float4 Light1Dir : TEXCOORD2;
+    float4 Light2Dir : TEXCOORD3;
     float4 Att1UV : TEXCOORD4;
     float4 Att2UV : TEXCOORD5;
-    float4 ShadowUV : TEXCOORD6;
-    float3 CameraDir : TEXCOORD7;
+    float4 ShadowUV0 : TEXCOORD6;
+    float4 ShadowUV1 : TEXCOORD7;
 };
 
 // Code:
@@ -86,7 +86,6 @@ VS_OUTPUT main(VS_INPUT IN) {
     float4 offset;
     float1 q0;
     float4 q1;
-    float4 q130;
     float3 q23;
     float3 q24;
     float3 q25;
@@ -111,7 +110,8 @@ VS_OUTPUT main(VS_INPUT IN) {
     float3 q44;
     float3 q45;
     float4 r0;
-
+	float3 camera;
+	
     offset.xyzw = IN.blendindices.zyxw * 765.01001;
     q32.xyz = mul(float3x3(Bones[0 + offset.w].xyz, Bones[1 + offset.w].xyz, Bones[2 + offset.w].xyz), IN.tangent.xyz);
     q30.xyz = mul(float3x3(Bones[0 + offset.z].xyz, Bones[1 + offset.z].xyz, Bones[2 + offset.z].xyz), IN.tangent.xyz);
@@ -144,20 +144,23 @@ VS_OUTPUT main(VS_INPUT IN) {
 	
     eye129.xyz = mul(float3x3(q33.xyz, q39.xyz, q45.xyz), normalize(EyePosition.xyz - r0.xyz));
     m157 = mul(SkinModelViewProj, r0.xyzw);
-	q130 = mul(m157, TESR_ShadowCameraToLightTransform);
     lit5.xyz = LightPosition[2].xyz - r0.xyz;
     lit3.xyz = LightPosition[1].xyz - r0.xyz;
 	OUT.Position = m157;
     OUT.BaseUV.xy = IN.BaseUV.xy;
     OUT.Light0Dir.xyz = normalize(m95.xyz);
-    OUT.Light1Dir.xyz = mul(float3x3(q33.xyz, q39.xyz, q45.xyz), normalize(lit3.xyz));
-    OUT.Light2Dir.xyz = mul(float3x3(q33.xyz, q39.xyz, q45.xyz), normalize(lit5.xyz));
+    OUT.Light1Dir.xyz = normalize(mul(float3x3(q33.xyz, q39.xyz, q45.xyz), lit3.xyz));
+    OUT.Light2Dir.xyz = normalize(mul(float3x3(q33.xyz, q39.xyz, q45.xyz), lit5.xyz));
+	camera.xyz = normalize(eye129.xyz);
+	OUT.Light0Dir.w = camera.x;
+	OUT.Light1Dir.w = camera.y;
+	OUT.Light2Dir.w = camera.z;
     OUT.Att1UV.w = 0.5;
     OUT.Att1UV.xyz = compress(lit3.xyz / LightPosition[1].w);
     OUT.Att2UV.w = 0.5;
     OUT.Att2UV.xyz = compress(lit5.xyz / LightPosition[2].w);
-    OUT.ShadowUV = q130;
-    OUT.CameraDir.xyz = normalize(eye129.xyz);
+    OUT.ShadowUV0 = mul(m157, TESR_ShadowCameraToLightTransform[0]);
+	OUT.ShadowUV1 = mul(m157, TESR_ShadowCameraToLightTransform[1]);
 
     return OUT;
 };

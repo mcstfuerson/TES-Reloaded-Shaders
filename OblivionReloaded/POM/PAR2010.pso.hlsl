@@ -14,7 +14,8 @@ sampler2D ShadowMap : register(s6);
 sampler2D ShadowMaskMap : register(s7);
 float4 Toggles : register(c7);
 float4 TESR_ShadowData : register(c10);
-sampler2D TESR_ShadowMapBuffer : register(s8) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
+sampler2D TESR_ShadowMapBufferNear : register(s8) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
+sampler2D TESR_ShadowMapBufferFar : register(s9) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
 //
 //
 // Registers:
@@ -38,8 +39,9 @@ struct VS_OUTPUT {
     float2 BaseUV : TEXCOORD0;
     float3 Light0Dir : TEXCOORD1_centroid;
     float3 Light0Spc : TEXCOORD3_centroid;
-    float3 CameraDir : TEXCOORD6_centroid;
-    float4 ShadowUV : TEXCOORD7;
+    float3 CameraDir : TEXCOORD5_centroid;
+	float4 ShadowUV0 : TEXCOORD6;
+    float4 ShadowUV1 : TEXCOORD7;
     float3 Color : COLOR0;
     float4 Fog : COLOR1;
 };
@@ -82,16 +84,16 @@ PS_OUTPUT main(VS_OUTPUT IN) {
 
     /* modifying shader --------------------------------------- */
 
-    psParallax(IN, uv, ao);
+    psParallax(IN.BaseUV, IN.CameraDir, uv, ao);
 
     /* fetch Base/Normal+Diffuse from parallaxed position */
     r0.rgb = tex2D(TESR_samplerBaseMap, uv.xy).rgb;
     r3.xyzw = tex2D(NormalMap, uv.xy);
 
-    q6.x = r3.w * pow(abs(shades(normalize(expand(r3.xyz)), normalize(IN.Light0Spc.xyz))), Toggles.z);
+    q6.x = r3.w * pow(abs(shades(normalize(expand(r3.xyz)), IN.Light0Spc.xyz)), Toggles.z);
     q4.x = dot(normalize(expand(r3.xyz)), IN.Light0Dir.xyz);
     q7.xyz = saturate((0.2 >= q4.x ? (q6.x * max(q4.x + 0.5, 0)) : q6.x) * PSLightColor[0].rgb);
-    q5.xyz = GetLightAmount(IN.ShadowUV);
+    q5.xyz = GetLightAmount(IN.ShadowUV0, IN.ShadowUV1);
     r1.xyz = (Toggles.x <= 0.0 ? r0.xyz : (r0.xyz * IN.Color.rgb));
     q17.xyz = (r1.xyz * max((q5.xyz * (saturate(q4.x) * PSLightColor[0].rgb)) + AmbientColor.rgb, 0)) + (q7.xyz * q5.xyz);
     q17.xyz = q17.xyz * ao;
