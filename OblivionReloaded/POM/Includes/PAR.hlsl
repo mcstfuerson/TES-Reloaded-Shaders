@@ -1,4 +1,5 @@
 #define	INTERPOLATE_SIMPLIFIED
+#define nolight
 
 float4 TESR_ParallaxData : register(c8);
 float4 TESR_TextureData : register(c9);
@@ -14,16 +15,16 @@ float4 TESR_TextureData : register(c9);
 #define	bBlendMIPs		(fMipLevelFrac = fMipLevel - (float)bBlendThreshold) > 0
 #define	bBlendFraction	(fMipLevelFrac / bBlendRange)
 
-void psParallax(in VS_OUTPUT IN, inout float2 uv, inout float ao) {
+void psParallax(in float2 BaseUV, in float3 CameraDir, inout float2 uv, inout float ao) {
 
 #ifndef	INTERPOLATE_SIMPLIFIED
 	// Compute initial parallax displacement direction:
-	float2 ParallaxDirection = normalize(IN.CameraDir.xy);
+	float2 ParallaxDirection = normalize(CameraDir.xy);
 	float2 iParallaxOffset;
 
 	// The length of this vector determines the furthest amount of displacement:
-	float Length	     = length(IN.CameraDir.xyz);
-	float ParallaxLength = (sqrt(Length * Length - IN.CameraDir.z * IN.CameraDir.z)) / IN.CameraDir.z;
+	float Length	     = length(CameraDir.xyz);
+	float ParallaxLength = (sqrt(Length * Length - CameraDir.z * CameraDir.z)) / CameraDir.z;
 
 	// Compute the actual reverse parallax displacement vector:
 	iParallaxOffset = ParallaxDirection * ParallaxLength;
@@ -35,7 +36,7 @@ void psParallax(in VS_OUTPUT IN, inout float2 uv, inout float ao) {
 	float2 iParallaxOffset;
 
 	// Compute the actual reverse parallax displacement vector:
-	iParallaxOffset = IN.CameraDir.xy / length(IN.CameraDir.xyz);
+	iParallaxOffset = CameraDir.xy / length(CameraDir.xyz);
 
 	// Need to scale the amount of displacement to account for different height ranges
 	// in height maps. This is controlled by an artist-editable parameter:
@@ -43,7 +44,7 @@ void psParallax(in VS_OUTPUT IN, inout float2 uv, inout float ao) {
 #endif
 
 	/* the view angle between the tangent-space normal and the camera */
-	float viewAngle = saturate(dot(normalize(IN.CameraDir), float3(0, 0, 1)));
+	float viewAngle = saturate(dot(normalize(CameraDir), float3(0, 0, 1)));
 
 	/* try to get rid of the swimming
 	iParallaxOffset *= pow(saturate(viewAngle + 0.25), 0.25); */
@@ -55,14 +56,14 @@ void psParallax(in VS_OUTPUT IN, inout float2 uv, inout float ao) {
 	// and its benefits.
 
 	// Compute the current gradients:
-	float2 fTexCoordsPerSize = IN.BaseUV.xy * TESR_TextureData.xy;
+	float2 fTexCoordsPerSize = BaseUV.xy * TESR_TextureData.xy;
 
 	// Compute all 4 derivatives in x and y in a single instruction to optimize:
 	float2 dxSize, dySize;
 	float2 dx, dy;
 
-	float4(dxSize, dx) = ddx(float4(fTexCoordsPerSize, IN.BaseUV.xy));
-	float4(dySize, dy) = ddy(float4(fTexCoordsPerSize, IN.BaseUV.xy));
+	float4(dxSize, dx) = ddx(float4(fTexCoordsPerSize, BaseUV.xy));
+	float4(dySize, dy) = ddy(float4(fTexCoordsPerSize, BaseUV.xy));
 
 	float  fMipLevel;
 	float  fMipLevelInt;    // mip level integer portion
@@ -124,7 +125,7 @@ void psParallax(in VS_OUTPUT IN, inout float2 uv, inout float ao) {
 	   bool   bCondition = true;
 
 	   float2 vTexOffsetPerStep = fStepSize * iParallaxOffset;
-	   float2 vTexCurrentOffset = IN.BaseUV.xy;
+	   float2 vTexCurrentOffset = BaseUV.xy;
 	   float  fCurrentBound     = 1.0;
 	   float  fParallaxAmount   = 0.0;
 
@@ -174,7 +175,7 @@ void psParallax(in VS_OUTPUT IN, inout float2 uv, inout float ao) {
 	   float2 vParallaxOffset = iParallaxOffset * (1 - fParallaxAmount);
 
 	   // The computed texture offset for the displaced point on the pseudo-extruded surface:
-	   float2 texSampleBase = IN.BaseUV.xy - vParallaxOffset;
+	   float2 texSampleBase = BaseUV.xy - vParallaxOffset;
 	   texSample = texSampleBase;
 
 //  OUT.Color.rgb = float3(fParallaxAmount, iParallaxOffset);

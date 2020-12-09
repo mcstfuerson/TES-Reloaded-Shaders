@@ -15,7 +15,7 @@ row_major float4x4 ShadowProj : register(c28);
 float4 ShadowProjData : register(c32);
 float4 ShadowProjTransform : register(c33);
 row_major float4x4 SkinModelViewProj : register(c1);
-row_major float4x4 TESR_ShadowCameraToLightTransform : register(c34);
+row_major float4x4 TESR_ShadowCameraToLightTransform[2] : register(c34);
 
 // Registers:
 //
@@ -63,6 +63,7 @@ struct VS_OUTPUT {
     float3 texcoord_1 : TEXCOORD1;
     float3 texcoord_2 : TEXCOORD2;
     float4 texcoord_4 : TEXCOORD4;
+	float4 texcoord_6 : TEXCOORD6;
     float4 texcoord_7 : TEXCOORD7;
 };
 
@@ -80,7 +81,6 @@ VS_OUTPUT main(VS_INPUT IN) {
 
     float3 lit1;
     float3 m26;
-    float4 m47;
     float4 mdl20;
     float4 offset;
     float4 q0;
@@ -159,7 +159,6 @@ VS_OUTPUT main(VS_INPUT IN) {
     m26.xyz = mul(float3x3(r5.xyz, q36.xyz, q25.xyz), LightDirection[0].xyz);
     r0.xyz = ((1 - weight(IN.LBLENDWEIGHT.xyz)) * q19.xyz) + q18.xyz;
     mdl20 = mul(SkinModelViewProj, r0.xyzw);
-    m47 = mul(mdl20, TESR_ShadowCameraToLightTransform);
     lit1.xyz = LightPosition[1].xyz - r0.xyz;
     OUT.color_1.rgb = FogColor.rgb;
     OUT.color_1.a = 1 - saturate((FogParam.x - length(mdl20.xyz)) / FogParam.y);
@@ -169,8 +168,8 @@ VS_OUTPUT main(VS_INPUT IN) {
     OUT.texcoord_2.xyz = mul(float3x3(r5.xyz, q36.xyz, q25.xyz), normalize(lit1.xyz));
     OUT.texcoord_4.w = 0.5;
     OUT.texcoord_4.xyz = compress(lit1.xyz / LightPosition[1].w);	// [-1,+1] to [0,1]
-    OUT.texcoord_7 = m47; 
-
+    OUT.texcoord_6 = mul(mdl20, TESR_ShadowCameraToLightTransform[0]);
+	OUT.texcoord_7 = mul(mdl20, TESR_ShadowCameraToLightTransform[1]);
     return OUT;
 };
 

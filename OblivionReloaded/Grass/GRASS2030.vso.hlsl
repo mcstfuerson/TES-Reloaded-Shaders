@@ -6,19 +6,19 @@
 //
 // Parameters:
 //
-float4 AddlParams : register(c7);
+float3 DiffuseDir : register(c0);
+float3 DiffuseColor : register(c1);
+float3 ScaleMask : register(c2);
+float4 WindData : register(c4);
 float4 AlphaParam : register(c5);
 float4 AmbientColor : register(c6);
-float3 DiffuseColor : register(c1);
-float3 DiffuseDir : register(c0);
+float4 AddlParams : register(c7);
+float4 ShadowProjData : register(c8);
+row_major float4x4 ModelViewProj : register(c9);
+float4 ShadowProjTransform : register(c13);
 float4 FogColor : register(c14);
 float4 FogParam : register(c15);
-float4 InstanceData[2] : register(c20);
-row_major float4x4 ModelViewProj : register(c9);
-float3 ScaleMask : register(c2);
-float4 ShadowProjData : register(c8);
-float4 ShadowProjTransform : register(c13);
-float4 WindData : register(c4);
+float4 InstanceData[228] : register(c20);
 float4 TESR_GrassScale : register(c248);
 row_major float4x4 TESR_ShadowCameraToLightTransform : register(c249);
 
@@ -61,9 +61,9 @@ struct VS_OUTPUT {
     float4 color_0 : COLOR0;
     float4 position : POSITION;
     float2 texcoord_0 : TEXCOORD0;
-    float4 texcoord_2 : TEXCOORD2;
-    float4 texcoord_4 : TEXCOORD4;
-    float4 texcoord_5 : TEXCOORD5;
+    float3 texcoord_4 : TEXCOORD4;
+	float4 texcoord_5 : TEXCOORD5;
+	float4 texcoord_6 : TEXCOORD6;
 };
 
 // Code:
@@ -118,16 +118,15 @@ VS_OUTPUT main(VS_INPUT IN) {
     r1.w = IN.position.w;
     r1.xy = (((sin(fracr((q0.x / 128) + WindData.w)) * WindData.z) * sqr(IN.color_0.a)) * WindData.xy) + r1.xy;
     r1.xyz = r1.xyz + InstanceData[0 + IN.texcoord_1.x].xyz;
-    r0 = mul(ModelViewProj, r1.xyzw);
-	q0 = mul(r0, TESR_ShadowCameraToLightTransform);
+    r0 = mul(ModelViewProj, r1);
 	r1.xy = saturate((length(r0.xyzw) - AlphaParam.xz) / AlphaParam.yw);
 	OUT.color_0.a = 1 - saturate((FogParam.x - length(r0.xyz)) / FogParam.y);
-	OUT.position.xyzw = r0.xyzw;
-    OUT.texcoord_2 = q0;
-    OUT.texcoord_4.xyzw = AmbientColor.rgba;
+	OUT.position = r0;
+    OUT.texcoord_4.xyz = AmbientColor.rgb;
     OUT.texcoord_5.w = r1.x * (1 - r1.y);
     OUT.texcoord_5.xyz = r2.xyz * AddlParams.x;
-
+    OUT.texcoord_6 = mul(r0, TESR_ShadowCameraToLightTransform);
+	
     return OUT;
 };
 

@@ -2,7 +2,6 @@
 
 float4x4 TESR_ViewTransform;
 float4x4 TESR_ProjectionTransform;
-float4x4 TESR_OrthoCameraToRainTransform;
 float4 TESR_CameraForward;
 float4 TESR_Tick;
 float4 TESR_RainData;
@@ -10,8 +9,7 @@ float4 TESR_SunColor;
 
 sampler2D TESR_RenderedBuffer : register(s0) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
 sampler2D TESR_DepthBuffer : register(s1) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
-sampler2D TESR_OrthoMapBuffer : register(s2) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
-sampler2D TESR_RainSampler : register(s3) < string ResourceName = "Precipitations\rainlayers.dds"; > = sampler_state { ADDRESSU = WRAP; ADDRESSV = WRAP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
+sampler2D TESR_RainSampler : register(s2) < string ResourceName = "Precipitations\rainlayers.dds"; > = sampler_state { ADDRESSU = WRAP; ADDRESSV = WRAP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
 
 static const float PI = 3.14159265;
 static const float nearZ = TESR_ProjectionTransform._43 / TESR_ProjectionTransform._33;

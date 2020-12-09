@@ -14,7 +14,8 @@ float4 PSLightColor[4] : register(c2);
 sampler2D ShadowMap : register(s5);
 sampler2D ShadowMaskMap : register(s6);
 float4 TESR_ShadowData : register(c10);
-sampler2D TESR_ShadowMapBuffer : register(s8) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
+sampler2D TESR_ShadowMapBufferNear : register(s8) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
+sampler2D TESR_ShadowMapBufferFar : register(s9) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
 //
 //
 // Registers:
@@ -38,13 +39,13 @@ struct VS_OUTPUT {
     // PAR2022.vso
 
     float2 BaseUV : TEXCOORD0;
-    float3 Light0Dir : TEXCOORD1_centroid;
-    float3 Light1Dir : TEXCOORD2_centroid;
-    float3 Light2Dir : TEXCOORD3_centroid;
+    float4 Light0Dir : TEXCOORD1_centroid;
+    float4 Light1Dir : TEXCOORD2_centroid;
+    float4 Light2Dir : TEXCOORD3_centroid;
     float4 Att1UV : TEXCOORD4;
     float4 Att0UV : TEXCOORD5;
-    float3 CameraDir : TEXCOORD7_centroid;
-    float4 ShadowUV : TEXCOORD6;
+    float4 ShadowUV0 : TEXCOORD6;
+	float4 ShadowUV1 : TEXCOORD7;
 };
 
 struct PS_OUTPUT {
@@ -81,16 +82,17 @@ PS_OUTPUT main(VS_OUTPUT IN) {
     float2 uv;
     float  ao;
     float  hg;
-    float3 cm = normalize(IN.CameraDir);
-
+    float3 cm = { IN.Light0Dir.w, IN.Light1Dir.w, IN.Light2Dir.w };
+	float3 cmn = normalize(cm);
+	
     /* calculate parallaxed position */
     hg = tex2D(TESR_samplerBaseMap, IN.BaseUV.xy).a;
-    uv.xy = (uvtile(hg) * (cm.xy / length(cm.xyz))) + IN.BaseUV.xy;
+    uv.xy = (uvtile(hg) * (cmn.xy / length(cmn.xyz))) + IN.BaseUV.xy;
     ao = 1.0;
 
     /* modifying shader --------------------------------------- */
 
-    psParallax(IN, uv, ao);
+    psParallax(IN.BaseUV, cm, uv, ao);
 
     /* fetch Normal from parallaxed position */
     nm.xyz = tex2D(NormalMap, uv.xy).xyz;
@@ -104,10 +106,10 @@ PS_OUTPUT main(VS_OUTPUT IN) {
     a0 = saturate((1 - att0.x) - att14.x);
     a1 = saturate((1 - att6.x) - att7.x);
     q2.xyz = normalize(expand(nm.xyz));
-    r0.xyz = shades(q2.xyz, normalize(IN.Light2Dir.xyz)) * PSLightColor[2].rgb;
-    r1.xyz = shades(q2.xyz, normalize(IN.Light1Dir.xyz)) * PSLightColor[1].rgb;
+    r0.xyz = shades(q2.xyz, IN.Light2Dir.xyz) * PSLightColor[2].rgb;
+    r1.xyz = shades(q2.xyz, IN.Light1Dir.xyz) * PSLightColor[1].rgb;
     r2.xyz = shades(q2.xyz, IN.Light0Dir.xyz) * PSLightColor[0].rgb;
-    r3.xyz = GetLightAmount(IN.ShadowUV);
+    r3.xyz = GetLightAmount(IN.ShadowUV0, IN.ShadowUV1);
     q21.xyz = (r3.xyz * r2.xyz) + (a0 * r1.xyz);
 
     OUT.Color.a = 1;

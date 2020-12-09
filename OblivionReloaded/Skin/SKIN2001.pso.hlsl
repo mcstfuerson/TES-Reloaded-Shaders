@@ -20,7 +20,8 @@ sampler2D FaceGenMap1 : register(s3);
 sampler2D AttenuationMap : register(s5);
 sampler2D ShadowMap : register(s6);
 sampler2D ShadowMaskMap : register(s7);
-sampler2D TESR_ShadowMapBuffer : register(s8) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
+sampler2D TESR_ShadowMapBufferNear : register(s8) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
+sampler2D TESR_ShadowMapBufferFar : register(s9) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
 //
 //
 // Registers:
@@ -44,8 +45,9 @@ sampler2D TESR_ShadowMapBuffer : register(s8) = sampler_state { ADDRESSU = CLAMP
 struct VS_OUTPUT {
     float2 BaseUV : TEXCOORD0;
     float3 Light0Dir : TEXCOORD1_centroid;
-    float3 CameraDir : TEXCOORD6_centroid;
-    float4 ShadowUV : TEXCOORD7;
+    float3 CameraDir : TEXCOORD5_centroid;
+	float4 ShadowUV0 : TEXCOORD6;
+    float4 ShadowUV1 : TEXCOORD7;
     float3 Color : COLOR0;
     float4 Fog : COLOR1;
 };
@@ -85,7 +87,7 @@ PS_OUTPUT main(VS_OUTPUT IN) {
     norm = normalize(expand(tex2D(NormalMap, IN.BaseUV.xy).xyz));
     r2 = tex2D(FaceGenMap1, IN.BaseUV.xy).rgb;
     r1 = tex2D(FaceGenMap0, IN.BaseUV.xy).rgb;
-	camera = normalize(IN.CameraDir.xyz);
+	camera = IN.CameraDir.xyz;
     q4 = 1 - shade(norm, camera);
     r0.xyz = ((q4 * sqr(q4)) * PSLightColor[0].rgb) * 0.5;
     r5 = shade(norm, IN.Light0Dir.xyz) * PSLightColor[0].rgb + r0.xyz;
@@ -94,7 +96,7 @@ PS_OUTPUT main(VS_OUTPUT IN) {
 	
     r5 = psSkin(r5, PSLightColor[0].rgb, camera, IN.Light0Dir.xyz, norm);
 	
-    q7 = max((GetLightAmountSkin(IN.ShadowUV) * r5) + AmbientColor.rgb, 0);
+    q7 = max((GetLightAmountSkin(IN.ShadowUV0, IN.ShadowUV1) * r5) + AmbientColor.rgb, 0);
     q8 = (Toggles.x <= 0.0 ? q18 : (q18 * IN.Color.rgb));
     q9 = q7 * q8;
     q10 = (Toggles.y <= 0.0 ? q9 : ((IN.Fog.a * (IN.Fog.rgb - (q8 * q7))) + q9));

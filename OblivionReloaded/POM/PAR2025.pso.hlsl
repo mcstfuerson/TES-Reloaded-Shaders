@@ -73,7 +73,7 @@ PS_OUTPUT main(VS_OUTPUT IN) {
 
     /* modifying shader --------------------------------------- */
 
-    psParallax(IN, uv, ao);
+    psParallax(IN.BaseUV, IN.CameraDir, uv, ao);
 
     /* fetch Normal+Diffuse from parallaxed position */
     r2.xyzw = tex2D(NormalMap, uv.xy);
