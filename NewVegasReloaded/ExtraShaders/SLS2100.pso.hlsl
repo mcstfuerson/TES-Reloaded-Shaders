@@ -7,9 +7,11 @@ float4 AmbientColor : register(c1);
 sampler2D BaseMap[7] : register(s0);
 sampler2D NormalMap[7] : register(s7);
 float4 PSLightColor[10] : register(c3);
+float4 TESR_FogColor : register(c15);
 float4 PSLightDir : register(c18);
 float4 TESR_ShadowData : register(c32);
-sampler2D TESR_ShadowMapBuffer : register(s14) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
+sampler2D TESR_ShadowMapBufferNear : register(s14) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
+sampler2D TESR_ShadowMapBufferFar : register(s15) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
 
 // Registers:
 //
@@ -27,13 +29,13 @@ sampler2D TESR_ShadowMapBuffer : register(s14) = sampler_state { ADDRESSU = CLAM
 
 struct VS_INPUT {
 	float3 LCOLOR_0 : COLOR0;
-    float2 BaseUV : TEXCOORD0;
+    float3 BaseUV : TEXCOORD0;
     float3 texcoord_1 : TEXCOORD1_centroid;
     float3 texcoord_3 : TEXCOORD3_centroid;
     float3 texcoord_4 : TEXCOORD4_centroid;
     float3 texcoord_5 : TEXCOORD5_centroid;
 	float4 texcoord_6 : TEXCOORD6;
-    float4 texcoord_7 : TEXCOORD7_centroid;
+    float4 texcoord_7 : TEXCOORD7;
 };
 
 struct PS_OUTPUT {
@@ -71,10 +73,10 @@ PS_OUTPUT main(VS_INPUT IN) {
     q2.xyz = normalize(IN.texcoord_5.xyz);
     m17.xyz = mul(float3x3(q1.xyz, q0.xyz, q2.xyz), PSLightDir.xyz);
     r2.w = shades(q21.xyz, m17.xyz);
-    q6.xyz = ((GetLightAmount(IN.texcoord_6) * (r2.w * PSLightColor[0].rgb)) + AmbientColor.rgb) * ((IN.LCOLOR_0.x * r3.xyz) + (r2.xyz * IN.LCOLOR_0.y));
+    q6.xyz = ((GetLightAmount(IN.texcoord_6, IN.texcoord_7) * (r2.w * PSLightColor[0].rgb)) + AmbientColor.rgb) * ((IN.LCOLOR_0.x * r3.xyz) + (r2.xyz * IN.LCOLOR_0.y));
     r1.xyz = q6.xyz * IN.texcoord_1.xyz;
     OUT.color_0.a = 1;
-    OUT.color_0.rgb = (IN.texcoord_7.w * (IN.texcoord_7.xyz - (IN.texcoord_1.xyz * q6.xyz))) + r1.xyz;
+    OUT.color_0.rgb = (IN.BaseUV.z * (TESR_FogColor.xyz - (IN.texcoord_1.xyz * q6.xyz))) + r1.xyz;
 
     return OUT;
 };

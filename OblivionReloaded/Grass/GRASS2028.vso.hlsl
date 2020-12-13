@@ -83,7 +83,8 @@ VS_OUTPUT main(VS_INPUT IN) {
     float4 r0;
     float4 r1;
     float3 r2;
-
+	float3 scale;
+	
     r0.yz = const_3.yz;
     q0.x = InstanceData[0 + IN.LTEXCOORD_1.x].y + InstanceData[0 + IN.LTEXCOORD_1.x].x;
     r0.x = expand(frac(q0.x / 17));
@@ -91,7 +92,8 @@ VS_OUTPUT main(VS_INPUT IN) {
     r1.w = IN.LPOSITION.w;
     OUT.color_0.rgb = FogColor.rgb;
     OUT.texcoord_0.xy = IN.LTEXCOORD_0.xy;
-    r1.xyz = (((r0.y * InstanceData[0 + IN.LTEXCOORD_1.x].w) * ScaleMask.xyz) + r0.z) * IN.LPOSITION.xyz;
+	scale.xyz = ScaleMask.xyz * TESR_GrassScale.xyz;
+    r1.xyz = (((r0.y * InstanceData[0 + IN.LTEXCOORD_1.x].w) * scale.xyz) + r0.z) * IN.LPOSITION.xyz;
     r0.z = 0;
     r0.y = -r0.w;
     r2.y = dot(r0.wxz, r1.xyz);

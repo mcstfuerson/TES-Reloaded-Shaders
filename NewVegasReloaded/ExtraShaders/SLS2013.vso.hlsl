@@ -9,7 +9,7 @@ float3 FogColor : register(c15);
 float4 FogParam : register(c14);
 float4 LightData[10] : register(c25);
 row_major float4x4 SkinModelViewProj : register(c1);
-row_major float4x4 TESR_ShadowCameraToLightTransform : register(c35);
+row_major float4x4 TESR_ShadowCameraToLightTransform[2] : register(c35);
 
 // Registers:
 //
@@ -48,6 +48,7 @@ struct VS_OUTPUT {
     float4 texcoord_1 : TEXCOORD1;
     float3 texcoord_3 : TEXCOORD3;
 	float4 texcoord_6 : TEXCOORD6;
+	float4 texcoord_7 : TEXCOORD7;
 };
 
 // Code:
@@ -72,7 +73,6 @@ VS_OUTPUT main(VS_INPUT IN) {
     float3 r2;
     float3 r4;
     float3 r5;
-	float4 shw;
 	
 #define	TanSpaceProj	float3x3(r2.xyz, r4.xyz, q8.xyz)
 
@@ -110,14 +110,14 @@ VS_OUTPUT main(VS_INPUT IN) {
     r2.y = dot(Bones[1 + offset.x].xyz, IN.LTANGENT.xyz);
     r2.x = dot(Bones[0 + offset.x].xyz, IN.LTANGENT.xyz);
 	mdl13 = mul(SkinModelViewProj, r1.xyzw);
-	shw = mul(mdl13, TESR_ShadowCameraToLightTransform);
     q3.x = log2(1 - saturate((FogParam.x - length(mdl13.xyz)) / FogParam.y));
     OUT.color_1.rgb = FogColor.rgb;
     OUT.color_1.a = exp2(q3.x * FogParam.z);
     OUT.position = mdl13;
     OUT.texcoord_0.xy = IN.LTEXCOORD_0.xy;
     OUT.texcoord_1.w = LightData[0].w;
-	OUT.texcoord_6 = shw;
+	OUT.texcoord_6 = mul(mdl13, TESR_ShadowCameraToLightTransform[0]);
+	OUT.texcoord_7 = mul(mdl13, TESR_ShadowCameraToLightTransform[1]);
     r0.yzw = (r2.xyz * IN.LBLENDWEIGHT.x) + r0.yzw;
     r2.z = dot(Bones[2 + offset.z].xyz, IN.LTANGENT.xyz);
     r2.y = dot(Bones[1 + offset.z].xyz, IN.LTANGENT.xyz);
