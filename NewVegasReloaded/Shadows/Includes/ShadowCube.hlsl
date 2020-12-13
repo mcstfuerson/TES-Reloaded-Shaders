@@ -1,18 +1,17 @@
 
-static const float BIAS = 0.0005f;
-static const float xPixelOffset = 1.0f / TESR_ShadowData.w;
-static const float yPixelOffset = 1.0f / TESR_ShadowData.w;
+static const float BIAS = 0.001f;
 
-
-float Lookup(samplerCUBE ShadowCubeMapBuffer, float3 LightDir, float Distance, float2 OffSet) {
+float Lookup(samplerCUBE ShadowCubeMapBuffer, float3 LightDir, float Distance, float Blend, float2 OffSet) {
 	 
-	float Shadow = texCUBE(ShadowCubeMapBuffer, LightDir + float3(OffSet.x * xPixelOffset, OffSet.y * yPixelOffset, 0.0f)).r;
-	if (Shadow > 0.0f && Shadow < 1.0f && Shadow < Distance - BIAS) return TESR_ShadowData.z * saturate(Distance);
+	float Shadow = texCUBE(ShadowCubeMapBuffer, LightDir + float3(OffSet.x * TESR_ShadowData.z, OffSet.y * TESR_ShadowData.z, 0.0f)).r;
+	if (Shadow > 0.0f && Shadow < 1.0f && Shadow < Distance - BIAS) return Blend;
 	return 1.0f;
 	
 }
 
-float GetLightAmount(samplerCUBE ShadowCubeMapBuffer, float4 WorldPos, float4 LightPos, float FarPlane) {
+float GetLightAmount(samplerCUBE ShadowCubeMapBuffer, float4 WorldPos, float4 LightPos, float FarPlane, float Blend) {
+	
+	if (TESR_ShadowData.x == -1.0f) return 1.0f; // Shadows are applied in post processing (ShadowsInteriors.fx.hlsl)
 	
 	float Shadow = 0.0f;
 	float3 LightDir;
@@ -26,29 +25,39 @@ float GetLightAmount(samplerCUBE ShadowCubeMapBuffer, float4 WorldPos, float4 Li
 	LightDir = LightDir / Distance;
 	Distance = Distance / FarPlane;
 	
-	if (TESR_ShadowData.y == 0.0f) {
+	Blend = max(1.0f - Blend, saturate(Distance) * TESR_ShadowData.y);
+	
+	if (TESR_ShadowData.x == 0.0f) {
+		for (y = -0.5f; y <= 0.5f; y += 0.5f) {
+			for (x = -0.5f; x <= 0.5f; x += 0.5f) {
+				Shadow += Lookup(ShadowCubeMapBuffer, LightDir, Distance, Blend, float2(x, y));
+			}
+		}
+		Shadow /= 9.0f;
+	}
+	else if (TESR_ShadowData.x == 1.0f) {
 		for (y = -1.5f; y <= 1.5f; y += 1.0f) {
 			for (x = -1.5f; x <= 1.5f; x += 1.0f) {
-				Shadow += Lookup(ShadowCubeMapBuffer, LightDir, Distance, float2(x, y));
+				Shadow += Lookup(ShadowCubeMapBuffer, LightDir, Distance, Blend, float2(x, y));
 			}
 		}
 		Shadow /= 16.0f;
 	}
-	else if (TESR_ShadowData.y == 1.0f) {
+	else if (TESR_ShadowData.x == 2.0f) {
 		for (y = -1.0f; y <= 1.0f; y += 0.5f) {
 			for (x = -1.0f; x <= 1.0f; x += 0.5f) {
-				Shadow += Lookup(ShadowCubeMapBuffer, LightDir, Distance, float2(x, y));
+				Shadow += Lookup(ShadowCubeMapBuffer, LightDir, Distance, Blend, float2(x, y));
 			}
 		}
 		Shadow /= 25.0f;
 	}
 	else {
-		for (y = -3.5f; y <= 3.5f; y += 1.0f) {
-			for (x = -3.5f; x <= 3.5f; x += 1.0f) {
-				Shadow += Lookup(ShadowCubeMapBuffer, LightDir, Distance, float2(x, y));
+		for (y = -2.5f; y <= 2.5f; y += 1.0f) {
+			for (x = -2.5f; x <= 2.5f; x += 1.0f) {
+				Shadow += Lookup(ShadowCubeMapBuffer, LightDir, Distance, Blend, float2(x, y));
 			}
 		}
-		Shadow /= 64.0f;
+		Shadow /= 36.0f;
 	}
 	return Shadow;
 	
