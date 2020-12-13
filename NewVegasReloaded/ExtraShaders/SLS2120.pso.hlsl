@@ -7,10 +7,12 @@ float4 AmbientColor : register(c1);
 sampler2D BaseMap[7] : register(s0);
 sampler2D NormalMap[7] : register(s7);
 float4 PSLightColor[10] : register(c3);
+float4 TESR_FogColor : register(c15);
 float4 PSLightDir : register(c18);
 float4 PSLightPosition[8] : register(c19);
 float4 TESR_ShadowData : register(c32);
-sampler2D TESR_ShadowMapBuffer : register(s14) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
+sampler2D TESR_ShadowMapBufferNear : register(s14) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
+sampler2D TESR_ShadowMapBufferFar : register(s15) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
 
 // Registers:
 //
@@ -30,14 +32,14 @@ sampler2D TESR_ShadowMapBuffer : register(s14) = sampler_state { ADDRESSU = CLAM
 struct VS_INPUT {
 	float3 LCOLOR_0 : COLOR0;
 	float4 LCOLOR_1 : COLOR1;
-    float2 BaseUV : TEXCOORD0;
+    float3 BaseUV : TEXCOORD0;
     float3 texcoord_1 : TEXCOORD1_centroid;
 	float3 texcoord_2 : TEXCOORD2_centroid;
     float3 texcoord_3 : TEXCOORD3_centroid;
     float3 texcoord_4 : TEXCOORD4_centroid;
     float3 texcoord_5 : TEXCOORD5_centroid;
 	float4 texcoord_6 : TEXCOORD6;
-    float4 texcoord_7 : TEXCOORD7_centroid;
+    float4 texcoord_7 : TEXCOORD7;
 };
 
 struct PS_OUTPUT {
@@ -111,8 +113,8 @@ PS_OUTPUT main(VS_INPUT IN) {
     r2.xyz = (shades(r1.xyz, m64.xyz) * PSLightColor[0].rgb) + r2.xyz;
     q27.xyz = ((shades(r1.xyz, normalize(m63.xyz)) * (1 - shades(q8.xyz, q8.xyz))) * PSLightColor[2].xyz) + r2.xyz;
     q28.xyz = ((shades(r1.xyz, normalize(m67.xyz)) * (1 - shades(q10.xyz, q10.xyz))) * PSLightColor[3].xyz) + q27.xyz;
-    q12.xyz = ((GetLightAmount(IN.texcoord_6) * q28.xyz) + AmbientColor.rgb) * ((IN.LCOLOR_1.x * r7.xyz) + q11.xyz);
-    q13.xyz = (IN.texcoord_7.w * (IN.texcoord_7.xyz - (IN.texcoord_1.xyz * q12.xyz))) + (q12.xyz * IN.texcoord_1.xyz);
+    q12.xyz = ((GetLightAmount(IN.texcoord_6, IN.texcoord_7) * q28.xyz) + AmbientColor.rgb) * ((IN.LCOLOR_1.x * r7.xyz) + q11.xyz);
+    q13.xyz = (IN.BaseUV.z * (TESR_FogColor.xyz - (IN.texcoord_1.xyz * q12.xyz))) + (q12.xyz * IN.texcoord_1.xyz);
     OUT.color_0.a = 1;
     OUT.color_0.rgb = q13.xyz;
 

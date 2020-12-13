@@ -12,6 +12,7 @@ float4 Toggles : register(c7);
 float4 TESR_ShadowData : register(c8);
 float4 TESR_ShadowLightPosition[4] : register(c9);
 float4 TESR_ShadowCubeMapFarPlanes : register(c13);
+float4 TESR_ShadowCubeMapBlend : register(c14);
 
 sampler2D BaseMap : register(s0);
 sampler2D NormalMap : register(s1);
@@ -81,8 +82,8 @@ PS_OUTPUT main(VS_OUTPUT IN) {
     q3.xyz = saturate((1 - att1.x) - att2.x) * (shades(q0.xyz, normalize(IN.texcoord_2.xyz)) * PSLightColor[1].rgb);
     q6.xyz = (Toggles.x <= 0.0 ? r0.xyz : (r0.xyz * IN.LCOLOR_0.xyz));
 	r4.xyz = shades(q0.xyz, IN.texcoord_1.xyz) * PSLightColor[0].rgb;
-	Shadow = GetLightAmount(TESR_ShadowCubeMapBuffer0, IN.texcoord_7, TESR_ShadowLightPosition[0], TESR_ShadowCubeMapFarPlanes.x);
-	if (TESR_ShadowLightPosition[1].w) Shadow *= GetLightAmount(TESR_ShadowCubeMapBuffer1, IN.texcoord_7, TESR_ShadowLightPosition[1], TESR_ShadowCubeMapFarPlanes.y);
+	Shadow = GetLightAmount(TESR_ShadowCubeMapBuffer0, IN.texcoord_7, TESR_ShadowLightPosition[0], TESR_ShadowCubeMapFarPlanes.x, TESR_ShadowCubeMapBlend.x);
+	if (TESR_ShadowLightPosition[1].w) Shadow *= GetLightAmount(TESR_ShadowCubeMapBuffer1, IN.texcoord_7, TESR_ShadowLightPosition[1], TESR_ShadowCubeMapFarPlanes.y, TESR_ShadowCubeMapBlend.y);
     q4.xyz = Shadow * max(r4.xyz + q3.xyz + AmbientColor.rgb, 0);
     q7.xyz = q4.xyz * q6.xyz;
     q8.xyz = (Toggles.y <= 0.0 ? q7.xyz : ((IN.LCOLOR_1.w * (IN.LCOLOR_1.xyz - (q6.xyz * q4.xyz))) + q7.xyz));
