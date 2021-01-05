@@ -105,17 +105,17 @@ float IsSameLight(float4 light1, float4 light2) {
 	return false;
 }
 
-float AddProximityLight(float4 WorldPos, float4 LightPos, float4 ExternalLightPos, float Shadow) {
+float AddProximityLight(float4 WorldPos, float4 LightPos, float4 ProximityLightPos, float Shadow) {
 
-	if (ExternalLightPos.w && !IsSameLight(ExternalLightPos, LightPos)) {
-		float distToExternalLight = distance(WorldPos.xyz, ExternalLightPos.xyz);
-		if (distToExternalLight < ExternalLightPos.w) {
-			float farCutOffDist = ExternalLightPos.w * 0.5f;
+	if (ProximityLightPos.w && !IsSameLight(ProximityLightPos, LightPos)) {
+		float distToProximityLight = distance(WorldPos.xyz, ProximityLightPos.xyz);
+		if (distToProximityLight < ProximityLightPos.w) {
+			float farCutOffDist = ProximityLightPos.w * 0.5f;
 			float farMaxInc = 0.2f;
 			float farClamp = Shadow + farMaxInc;
-			float farScaler = (farMaxInc * 2) / (ExternalLightPos.w - farCutOffDist);
-			if (distToExternalLight > farCutOffDist) {
-				Shadow += (farCutOffDist - (distToExternalLight - farCutOffDist)) * farScaler;
+			float farScaler = (farMaxInc * 2) / (ProximityLightPos.w - farCutOffDist);
+			if (distToProximityLight > farCutOffDist) {
+				Shadow += (farCutOffDist - (distToProximityLight - farCutOffDist)) * farScaler;
 				Shadow = clamp(Shadow, 0.0f, farClamp);
 			}
 			else {
@@ -123,7 +123,7 @@ float AddProximityLight(float4 WorldPos, float4 LightPos, float4 ExternalLightPo
 				float nearClamp = farClamp + nearMaxInc;
 				float nearScaler = (nearMaxInc * 2.0) / farCutOffDist;
 				Shadow = farClamp;
-				Shadow += (farCutOffDist - distToExternalLight) * nearScaler;
+				Shadow += (farCutOffDist - distToProximityLight) * nearScaler;
 				Shadow = clamp(Shadow, 0.0f, nearClamp);
 			}
 		}
