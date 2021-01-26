@@ -1,5 +1,6 @@
 // Image space shadows shader for Oblivion Reloaded
 
+float4x4 TESR_WorldTransform;
 float4x4 TESR_WorldViewProjectionTransform;
 float4x4 TESR_ViewTransform;
 float4x4 TESR_ProjectionTransform;
@@ -8,11 +9,16 @@ float4x4 TESR_ShadowCameraToLightTransformFar;
 float4 TESR_CameraPosition;
 float4 TESR_WaterSettings;
 float4 TESR_ShadowData;
+float4 TESR_ShadowLightPosition0;
+float4 TESR_ShadowLightPosition1;
+float4 TESR_ShadowLightPosition2;
+float4 TESR_ShadowLightPosition3;
 
 sampler2D TESR_RenderedBuffer : register(s0) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
 sampler2D TESR_DepthBuffer : register(s1) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
 sampler2D TESR_ShadowMapBufferNear : register(s2) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
 sampler2D TESR_ShadowMapBufferFar : register(s3) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
+sampler2D TESR_SourceBuffer : register(s4) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
 
 static const float nearZ = TESR_ProjectionTransform._43 / TESR_ProjectionTransform._33;
 static const float farZ = (TESR_ProjectionTransform._33 * nearZ) / (TESR_ProjectionTransform._33 - 1.0f);
@@ -95,7 +101,19 @@ float Lookup(float4 ShadowPos, float2 OffSet) {
 	
 }
 
-float GetLightAmount(float4 ShadowPos, float4 ShadowPosFar) {
+float AddProximityLight(float4 WorldPos, float4 ExternalLightPos, float Shadow) {
+
+	if(ExternalLightPos.w){
+		float distToExternalLight = distance(WorldPos.xyz, ExternalLightPos.xyz);
+		if (distToExternalLight < ExternalLightPos.w) {
+			Shadow += saturate(1.000f - (distToExternalLight / (ExternalLightPos.w)));
+		}
+	}
+	return Shadow;
+}
+
+
+float GetLightAmount(float4 WorldPos, float4 ShadowPos, float4 ShadowPosFar) {
 	
 	float Shadow = 0.0f;
 	float x;
@@ -115,7 +133,12 @@ float GetLightAmount(float4 ShadowPos, float4 ShadowPosFar) {
 		}
 	}
 	Shadow /= 9.0f;
-	return Shadow;
+
+	Shadow = AddProximityLight(WorldPos, TESR_ShadowLightPosition0, Shadow);
+	Shadow = AddProximityLight(WorldPos, TESR_ShadowLightPosition1, Shadow);
+	Shadow = AddProximityLight(WorldPos, TESR_ShadowLightPosition2, Shadow);
+	Shadow = AddProximityLight(WorldPos, TESR_ShadowLightPosition3, Shadow);
+	return saturate(Shadow);
 	
 }
 
@@ -128,11 +151,11 @@ float4 Shadow( VSOUT IN ) : COLOR0 {
 	
 	if (world_pos.z > TESR_WaterSettings.x) {
 		float4 pos = mul(world_pos, TESR_WorldViewProjectionTransform);
+		float4 world_pos_trans = mul(world_pos, TESR_WorldTransform);
 		float4 ShadowNear = mul(pos, TESR_ShadowCameraToLightTransformNear);
 		float4 ShadowFar = mul(pos, TESR_ShadowCameraToLightTransformFar);	
-		float Shadow = GetLightAmount(ShadowNear, ShadowFar);
-		
-		color.rgb *= Shadow * float3(0.96f, 0.98f, 1.0f);
+		float Shadow = GetLightAmount(world_pos_trans, ShadowNear, ShadowFar);
+		color.rgb *= Shadow * float3(1.0f, 1.0f, 1.0f);
 	}
     return float4(color, 1.0f);
 	
