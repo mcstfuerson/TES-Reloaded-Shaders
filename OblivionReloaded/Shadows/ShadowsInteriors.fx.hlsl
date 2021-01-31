@@ -85,12 +85,12 @@ float LookupLightAmount(samplerCUBE ShadowCubeMapBuffer, float4 WorldPos, float4
 
 	Blend = max(1.0f - Blend, saturate(Distance) * TESR_ShadowData.y);
 
-	for (y = -0.5f; y <= 0.5f; y += 0.5f) {
-		for (x = -0.5f; x <= 0.5f; x += 0.5f) {
+	for (y = -2.5f; y <= 2.5f; y += 1.0f) {
+		for (x = -2.5f; x <= 2.5f; x += 1.0f) {
 			Shadow += Lookup(ShadowCubeMapBuffer, LightDir, Distance, Blend, float2(x, y));
 		}
 	}
-	Shadow /= 9.0f;
+	Shadow /= 36.0f;
 	return Shadow;
 
 }
