@@ -42,8 +42,6 @@ float Lookup(float4 ShadowPos, float2 OffSet) {
 
 float GetLightAmount(float4 ShadowPos, float4 ShadowPosFar) {
 
-	//if (TESR_ShadowData.x == -1.0f) return 1.0f; // Shadows are applied in post processing (ShadowsExteriors.fx.hlsl)
-	float quality = 0.0f;
 	float Shadow = 0.0f;
 	float x;
 	float y;
@@ -56,38 +54,13 @@ float GetLightAmount(float4 ShadowPos, float4 ShadowPosFar) {
 
 	ShadowPos.x = ShadowPos.x * 0.5f + 0.5f;
 	ShadowPos.y = ShadowPos.y * -0.5f + 0.5f;
-	if (quality == 0.0f) {
-		for (y = -0.5f; y <= 0.5f; y += 0.5f) {
-			for (x = -0.5f; x <= 0.5f; x += 0.5f) {
-				Shadow += Lookup(ShadowPos, float2(x, y));
-			}
+
+	for (y = -0.5f; y <= 0.5f; y += 0.5f) {
+		for (x = -0.5f; x <= 0.5f; x += 0.5f) {
+			Shadow += Lookup(ShadowPos, float2(x, y));
 		}
-		Shadow /= 9.0f;
 	}
-	else if (quality == 1.0f) {
-		for (y = -1.5f; y <= 1.5f; y += 1.0f) {
-			for (x = -1.5f; x <= 1.5f; x += 1.0f) {
-				Shadow += Lookup(ShadowPos, float2(x, y));
-			}
-		}
-		Shadow /= 16.0f;
-	}
-	else if (quality == 2.0f) {
-		for (y = -1.0f; y <= 1.0f; y += 0.5f) {
-			for (x = -1.0f; x <= 1.0f; x += 0.5f) {
-				Shadow += Lookup(ShadowPos, float2(x, y));
-			}
-		}
-		Shadow /= 25.0f;
-	}
-	else {
-		for (y = -2.5f; y <= 2.5f; y += 1.0f) {
-			for (x = -2.5f; x <= 2.5f; x += 1.0f) {
-				Shadow += Lookup(ShadowPos, float2(x, y));
-			}
-		}
-		Shadow /= 36.0f;
-	}
+	Shadow /= 9.0f;
 	return Shadow;
 
 }
