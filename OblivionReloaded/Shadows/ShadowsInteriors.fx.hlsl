@@ -43,6 +43,8 @@ static const float farZ = (TESR_ProjectionTransform._33 * nearZ) / (TESR_Project
 static const float Zmul = nearZ * farZ;
 static const float Zdiff = farZ - nearZ;
 static const float BIAS = 0.001f;
+static const float farMaxInc = 0.2f;
+static const float nearMaxInc = 1.0f;
 
 struct VSOUT
 {
@@ -151,153 +153,71 @@ float LookupLightAmount(int bufferIndex, float4 WorldPos, float4 LightPos, float
 
 }
 
-float IsSameLight(float4 light1, float4 light2) {
-
-	if (light1.x == light2.x) {
-		if (light1.y == light2.y) {
-			return true;
-		}
-	}
-	return false;
-}
-
 float4 Shadow(VSOUT IN) : COLOR0{
 
 	float3 color = tex2D(TESR_RenderedBuffer, IN.UVCoord).rgb;
 	float depth = readDepth(IN.UVCoord);
 	float3 camera_vector = toWorld(IN.UVCoord) * depth;
 	float4 world_pos = float4(TESR_CameraPosition.xyz + camera_vector, 1.0f);
-
 	float4 pos = mul(world_pos, TESR_WorldTransform);
 
-	float4 light = 0.0f;
-	float4 proxLight = 0.0f;
-	float blend = 0;
+	float4 lightPos[12];
+	float blend[12];
+	lightPos[0] = TESR_ShadowLightPosition0;
+	lightPos[1] = TESR_ShadowLightPosition1;
+	lightPos[2] = TESR_ShadowLightPosition2;
+	lightPos[3] = TESR_ShadowLightPosition3;
+	lightPos[4] = TESR_ShadowLightPosition4;
+	lightPos[5] = TESR_ShadowLightPosition5;
+	lightPos[6] = TESR_ShadowLightPosition6;
+	lightPos[7] = TESR_ShadowLightPosition7;
+	lightPos[8] = TESR_ShadowLightPosition8;
+	lightPos[9] = TESR_ShadowLightPosition9;
+	lightPos[10] = TESR_ShadowLightPosition10;
+	lightPos[11] = TESR_ShadowLightPosition11;
+	blend[0] = TESR_ShadowCubeMapBlend.x;
+	blend[1] = TESR_ShadowCubeMapBlend.y;
+	blend[2] = TESR_ShadowCubeMapBlend.z;
+	blend[3] = TESR_ShadowCubeMapBlend.w;
+	blend[4] = TESR_ShadowCubeMapBlend2.x;
+	blend[5] = TESR_ShadowCubeMapBlend2.y;
+	blend[6] = TESR_ShadowCubeMapBlend2.z;
+	blend[7] = TESR_ShadowCubeMapBlend2.w;
+	blend[8] = TESR_ShadowCubeMapBlend3.x;
+	blend[9] = TESR_ShadowCubeMapBlend3.y;
+	blend[10] = TESR_ShadowCubeMapBlend3.z;
+	blend[11] = TESR_ShadowCubeMapBlend3.w;
+
 	float fShadow = 1;
 	float shadow = 1;
 	float tShadow = 1;
 	float tShadowMax = 1;
-
 	float distToProximityLight;
 	float farCutOffDist;
-	float farMaxInc;
 	float farClamp;
 	float farScaler;
-	float nearMaxInc;
 	float nearClamp;
 	float nearScaler;
 
 	for (int i = 0; i < 12; i++) {
-		if (i == 0) {
-			light = TESR_ShadowLightPosition0;
-			blend = TESR_ShadowCubeMapBlend.x;
-		}
-		else if (i == 1) {
-			light = TESR_ShadowLightPosition1;
-			blend = TESR_ShadowCubeMapBlend.y;
-		}
-		else if (i == 2) {
-			light = TESR_ShadowLightPosition2;
-			blend = TESR_ShadowCubeMapBlend.z;
-		}
-		else if (i == 3) {
-			light = TESR_ShadowLightPosition3;
-			blend = TESR_ShadowCubeMapBlend.w;
-		}
-		else if (i == 4) {
-			light = TESR_ShadowLightPosition4;
-			blend = TESR_ShadowCubeMapBlend2.x;
-		}
-		else if (i == 5) {
-			light = TESR_ShadowLightPosition5;
-			blend = TESR_ShadowCubeMapBlend2.y;
-		}
-		else if (i == 6) {
-			light = TESR_ShadowLightPosition6;
-			blend = TESR_ShadowCubeMapBlend2.z;
-		}
-		else if (i == 7) {
-			light = TESR_ShadowLightPosition7;
-			blend = TESR_ShadowCubeMapBlend2.w;
-		}
-		else if (i == 8) {
-			light = TESR_ShadowLightPosition8;
-			blend = TESR_ShadowCubeMapBlend3.x;
-		}
-		else if (i == 9) {
-			light = TESR_ShadowLightPosition9;
-			blend = TESR_ShadowCubeMapBlend3.y;
-		}
-		else if (i == 10) {
-			light = TESR_ShadowLightPosition10;
-			blend = TESR_ShadowCubeMapBlend3.z;
-		}
-		else if (i == 11) {
-			light = TESR_ShadowLightPosition11;
-			blend = TESR_ShadowCubeMapBlend3.w;
-		}
-		else {
-			break;
-		}
 
-		if (light.w) {
-			shadow = LookupLightAmount(i, pos, light, blend);
+		if (lightPos[i].w) {
+			shadow = LookupLightAmount(i, pos, lightPos[i], blend[i]);
 			tShadowMax = shadow;
-			for (int l = 0; l < 12; l++) {
-				if (l == 0) {
-					proxLight = TESR_ShadowLightPosition0;
-				}
-				else if (l == 1) {
-					proxLight = TESR_ShadowLightPosition1;
-				}
-				else if (l == 2) {
-					proxLight = TESR_ShadowLightPosition2;
-				}
-				else if (l == 3) {
-					proxLight = TESR_ShadowLightPosition3;
-				}
-				else if (l == 4) {
-					proxLight = TESR_ShadowLightPosition4;
-				}
-				else if (l == 5) {
-					proxLight = TESR_ShadowLightPosition5;
-				}
-				else if (l == 6) {
-					proxLight = TESR_ShadowLightPosition6;
-				}
-				else if (l == 7) {
-					proxLight = TESR_ShadowLightPosition7;
-				}
-				else if (l == 8) {
-					proxLight = TESR_ShadowLightPosition8;
-				}
-				else if (l == 9) {
-					proxLight = TESR_ShadowLightPosition9;
-				}
-				else if (l == 10) {
-					proxLight = TESR_ShadowLightPosition10;
-				}
-				else if (l == 11) {
-					proxLight = TESR_ShadowLightPosition11;
-				}
-				else {
-					break;
-				}
+			for (int j = 0; j < 12; j++) {
 
 				tShadow = shadow;
-				if (proxLight.w && !IsSameLight(proxLight, light)) {
-					distToProximityLight = distance(pos.xyz, proxLight.xyz);
-					if (distToProximityLight < proxLight.w) {
-						farCutOffDist = proxLight.w * 0.5f;
-						farMaxInc = 0.2f;
+				if (lightPos[j].w && i != j) {
+					distToProximityLight = distance(pos.xyz, lightPos[j].xyz);
+					if (distToProximityLight < lightPos[j].w) {
+						farCutOffDist = lightPos[j].w * 0.5f;
 						farClamp = tShadow + farMaxInc;
-						farScaler = (farMaxInc * 2) / (proxLight.w - farCutOffDist);
+						farScaler = (farMaxInc * 2) / (lightPos[j].w - farCutOffDist);
 						if (distToProximityLight > farCutOffDist) {
 							tShadow += (farCutOffDist - (distToProximityLight - farCutOffDist)) * farScaler;
 							tShadow = clamp(tShadow, 0.0f, farClamp);
 						}
 						else {
-							nearMaxInc = 1.0f;
 							nearClamp = farClamp + nearMaxInc;
 							nearScaler = (nearMaxInc * 2.0) / farCutOffDist;
 							tShadow = farClamp;
