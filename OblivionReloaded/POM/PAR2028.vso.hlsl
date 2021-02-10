@@ -8,6 +8,7 @@
 //
 float4 EyePosition : register(c25);
 row_major float4x4 ModelViewProj : register(c0);
+row_major float4x4 TESR_InvViewProjectionTransform : register(c34);
 //
 //
 // Registers:
@@ -40,7 +41,9 @@ struct VS_OUTPUT {
     float4 Color : COLOR0;
     float4 Position : POSITION;
     float2 BaseUV : TEXCOORD0;
+    float4 texcoord_4 : TEXCOORD4;
     float3 CameraDir : TEXCOORD6;
+    
 };
 
 // Code:
@@ -50,10 +53,13 @@ VS_OUTPUT main(VS_INPUT IN) {
 
     /* original shader --------------------------------------- */
 
+    float4 mdl = mul(ModelViewProj, IN.Position);
+
     OUT.Color.rgba = IN.Color.rgba;
     OUT.Position.xyzw = mul(ModelViewProj, IN.Position.xyzw);
     OUT.CameraDir.xyz = mul(TanSpaceProj, EyePosition.xyz - IN.Position.xyz);
     OUT.BaseUV.xy = IN.BaseUV.xy;
+    OUT.texcoord_4 = mul(mdl, TESR_InvViewProjectionTransform);
 
     return OUT;
 };
