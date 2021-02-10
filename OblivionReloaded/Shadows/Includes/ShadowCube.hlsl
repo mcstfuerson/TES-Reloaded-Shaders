@@ -91,7 +91,7 @@ float GetLightAmount(float4 pos) {
 					distToProximityLight = distance(pos.xyz, TESR_ShadowLightPosition[j].xyz);
 					if (distToProximityLight < TESR_ShadowLightPosition[j].w && shadows[j]>shadows[i]) {
 						if (TESR_ShadowLightPosition[j].w > TESR_ShadowLightPosition[i].w) {
-							farCutOffDist = TESR_ShadowLightPosition[j].w * 0.9f;
+							farCutOffDist = TESR_ShadowLightPosition[j].w * (0.5f + ((TESR_ShadowLightPosition[j].w / TESR_ShadowLightPosition[i].w) * 0.12f));
 						}
 						else {
 							farCutOffDist = TESR_ShadowLightPosition[j].w * 0.5f;
