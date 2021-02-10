@@ -170,6 +170,7 @@ float4 Shadow(VSOUT IN) : COLOR0{
 	float farScaler;
 	float nearClamp;
 	float nearScaler;
+	float scaleMod;
 
 	for (int i = 0; i < 12; i++) {
 
@@ -180,12 +181,17 @@ float4 Shadow(VSOUT IN) : COLOR0{
 				tShadow = shadows[i];
 				if (lightPos[j].w && i != j) {
 					distToProximityLight = distance(pos.xyz, lightPos[j].xyz);
-					if (distToProximityLight < lightPos[j].w) {
-						farCutOffDist = lightPos[j].w * 0.5f;
+					if (distToProximityLight < lightPos[j].w && shadows[j]>shadows[i]) {
+						if (lightPos[j].w > lightPos[i].w) {
+							farCutOffDist = lightPos[j].w * 0.9f;
+						} else {
+							farCutOffDist = lightPos[j].w * 0.5f;
+						}
 						farClamp = tShadow + farMaxInc;
-						farScaler = (farMaxInc * 2) / (lightPos[j].w - farCutOffDist);
+						scaleMod = lightPos[j].w * 0.5f;
+						farScaler = (farMaxInc * 2) / scaleMod;
 						if (distToProximityLight > farCutOffDist) {
-							tShadow += (farCutOffDist - (distToProximityLight - farCutOffDist)) * farScaler;
+							tShadow += (scaleMod - (distToProximityLight - scaleMod)) * farScaler;
 							tShadow = clamp(tShadow, 0.0f, farClamp);
 						}
 						else {

@@ -73,22 +73,33 @@ float GetLightAmount(float4 pos) {
 	float farScaler;
 	float nearClamp;
 	float nearScaler;
+	float scaleMod;
 
 	for (int i = 0; i < 12; i++) {
 
 		if (TESR_ShadowLightPosition[i].w) {
 			tShadowMax = shadows[i];
 			for (int j = 0; j < 12; j++) {
-
+				scaleMod = TESR_ShadowLightPosition[j].w * 0.5f;
 				tShadow = shadows[i];
-				if (TESR_ShadowLightPosition[j].w && i != j) {
+
+				if (i == j) {
+					continue;
+				}
+
+				if (TESR_ShadowLightPosition[j].w) {
 					distToProximityLight = distance(pos.xyz, TESR_ShadowLightPosition[j].xyz);
-					if (distToProximityLight < TESR_ShadowLightPosition[j].w) {
-						farCutOffDist = TESR_ShadowLightPosition[j].w * 0.5f;
+					if (distToProximityLight < TESR_ShadowLightPosition[j].w && shadows[j]>shadows[i]) {
+						if (TESR_ShadowLightPosition[j].w > TESR_ShadowLightPosition[i].w) {
+							farCutOffDist = TESR_ShadowLightPosition[j].w * 0.9f;
+						}
+						else {
+							farCutOffDist = TESR_ShadowLightPosition[j].w * 0.5f;
+						}
 						farClamp = tShadow + farMaxInc;
-						farScaler = (farMaxInc * 2) / (TESR_ShadowLightPosition[j].w - farCutOffDist);
+						farScaler = (farMaxInc * 2) / (scaleMod);
 						if (distToProximityLight > farCutOffDist) {
-							tShadow += (farCutOffDist - (distToProximityLight - farCutOffDist)) * farScaler;
+							tShadow += (scaleMod - (distToProximityLight - scaleMod)) * farScaler;
 							tShadow = clamp(tShadow, 0.0f, farClamp);
 						}
 						else {
