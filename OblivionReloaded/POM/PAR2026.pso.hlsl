@@ -13,7 +13,7 @@ sampler2D NormalMap : register(s1);
 float4 PSLightColor[4] : register(c2);
 float4 Toggles : register(c7);
 sampler2D TESR_samplerBaseMap : register(s0) = sampler_state { MINFILTER = LINEAR; };
-float4 TESR_ShadowData : register(c10);
+float4 TESR_ShadowCubeData : register(c10);
 float4 TESR_ShadowLightPosition[12] : register(c14);
 float4 TESR_ShadowCubeMapBlend : register(c11);
 float4 TESR_ShadowCubeMapBlend2 : register(c12);

@@ -11,7 +11,7 @@ float4 PSLightColor[4] : register(c2);
 float4 Toggles : register(c7);
 sampler2D BaseMap : register(s0);
 sampler2D NormalMap : register(s1);
-float4 TESR_ShadowData : register(c10);
+float4 TESR_ShadowCubeData : register(c10);
 float4 TESR_ShadowLightPosition[12] : register(c14);
 float4 TESR_ShadowCubeMapBlend : register(c11);
 float4 TESR_ShadowCubeMapBlend2 : register(c12);
@@ -46,7 +46,7 @@ samplerCUBE TESR_ShadowCubeMapBuffer11 : register(s15) = sampler_state { ADDRESS
 struct VS_OUTPUT {
     float2 BaseUV : TEXCOORD0;
     float3 texcoord_1 : TEXCOORD1_centroid;
-    float4 texcoord_7 : TEXCOORD7;
+	float4 texcoord_7 : TEXCOORD7;
     float3 LCOLOR_0 : COLOR0;
     float4 LCOLOR_1 : COLOR1;
 };
@@ -58,7 +58,7 @@ struct PS_OUTPUT {
 #include "../Shadows/Includes/ShadowCube.hlsl"
 
 PS_OUTPUT main(VS_OUTPUT IN) {
-
+	
     PS_OUTPUT OUT;
 
 #define	expand(v)		(((v) - 0.5) / 0.5)
@@ -72,8 +72,8 @@ PS_OUTPUT main(VS_OUTPUT IN) {
     float3 q4;
     float4 r0;
     float4 r1;
-    float Shadow;
-
+	float Shadow;
+	
     r1.xyzw = tex2D(NormalMap, IN.BaseUV.xy);
     r0.xyzw = tex2D(BaseMap, IN.BaseUV.xy);
     q0.xyz = (shades(normalize(expand(r1.xyz)), IN.texcoord_1.xyz) * PSLightColor[0].rgb) + AmbientColor.rgb;
@@ -84,7 +84,7 @@ PS_OUTPUT main(VS_OUTPUT IN) {
     OUT.color_0.a = r0.w * AmbientColor.a;
     OUT.color_0.rgb = q4.xyz;
     return OUT;
-
+	
 };
 
 // approximately 19 instruction slots used (2 texture, 17 arithmetic)

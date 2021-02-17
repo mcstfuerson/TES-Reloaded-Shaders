@@ -4,7 +4,7 @@ static const float farMaxInc = 0.2f;
 static const float nearMaxInc = 1.0f;
 
 float Lookup(samplerCUBE buffer, float3 LightDir, float Distance, float Blend, float2 OffSet) {
-	float Shadow = texCUBE(buffer, LightDir + float3(OffSet.x * TESR_ShadowData.z, OffSet.y * TESR_ShadowData.z, 0.0f)).r;
+	float Shadow = texCUBE(buffer, LightDir + float3(OffSet.x * TESR_ShadowCubeData.z, OffSet.y * TESR_ShadowCubeData.z, 0.0f)).r;
 	if (Shadow > 0.0f && Shadow < 1.0f && Shadow < Distance - BIAS) return Blend;
 	return 1.0f;
 }
@@ -23,14 +23,14 @@ float LookupLightAmount(samplerCUBE buffer, float4 WorldPos, float4 LightPos, fl
 	LightDir = LightDir / Distance;
 	Distance = Distance / LightPos.w;
 
-	Blend = max(1.0f - Blend, saturate(Distance) * TESR_ShadowData.y);
+	Blend = max(1.0f - Blend, saturate(Distance) * TESR_ShadowCubeData.y);
 
-	for (y = -2.5f; y <= 2.5f; y += 1.0f) {
-		for (x = -2.5f; x <= 2.5f; x += 1.0f) {
+	for (y = -0.5f; y <= 0.5f; y += 0.5f) {
+		for (x = -0.5f; x <= 0.5f; x += 0.5f) {
 			Shadow += Lookup(buffer, LightDir, Distance, Blend, float2(x, y));
 		}
 	}
-	Shadow /= 36.0f;
+	Shadow /= 9.0f;
 	return Shadow;
 
 }

@@ -7,7 +7,7 @@
 // Parameters:
 
 sampler2D DiffuseMap : register(s0);
-float4 TESR_ShadowData : register(c0);
+float4 TESR_ShadowCubeData : register(c0);
 float4 TESR_ShadowLightPosition[12] : register(c4);
 float4 TESR_ShadowCubeMapBlend : register(c1);
 float4 TESR_ShadowCubeMapBlend2 : register(c2);
@@ -38,7 +38,7 @@ samplerCUBE TESR_ShadowCubeMapBuffer11 : register(s15) = sampler_state { ADDRESS
 struct VS_OUTPUT {
     float2 DiffuseUV : TEXCOORD0;
     float3 LCOLOR_0 : COLOR0;
-    float4 texcoord_7 : TEXCOORD7;
+	float4 texcoord_7 : TEXCOORD7;
 };
 
 struct PS_OUTPUT {
@@ -52,13 +52,13 @@ PS_OUTPUT main(VS_OUTPUT IN) {
 
     float4 r0;
     float Shadow;
-
+	
     r0 = tex2D(DiffuseMap, IN.DiffuseUV.xy);
     Shadow = GetLightAmount(IN.texcoord_7);
     OUT.color_0.a = r0.w;
     OUT.color_0.rgb = Shadow * r0.xyz * IN.LCOLOR_0.xyz;
     return OUT;
-
+	
 };
 
 // approximately 3 instruction slots used (1 texture, 2 arithmetic)

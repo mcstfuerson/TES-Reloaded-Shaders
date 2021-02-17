@@ -5,7 +5,7 @@ float4x4 TESR_ViewTransform;
 float4x4 TESR_ProjectionTransform;
 float4 TESR_CameraPosition;
 float4 TESR_WaterSettings;
-float4 TESR_ShadowData;
+float4 TESR_ShadowCubeData;
 float4 TESR_ShadowLightPosition0;
 float4 TESR_ShadowLightPosition1;
 float4 TESR_ShadowLightPosition2;
@@ -82,7 +82,7 @@ float3 toWorld(float2 tex)
 }
 
 float Lookup(samplerCUBE buffer, float3 LightDir, float Distance, float Blend, float2 OffSet) {
-	float Shadow = texCUBE(buffer, LightDir + float3(OffSet.x * TESR_ShadowData.z, OffSet.y * TESR_ShadowData.z, 0.0f)).r;
+	float Shadow = texCUBE(buffer, LightDir + float3(OffSet.x * TESR_ShadowCubeData.z, OffSet.y * TESR_ShadowCubeData.z, 0.0f)).r;
 	if (Shadow > 0.0f && Shadow < 1.0f && Shadow < Distance - BIAS) return Blend;
 	return 1.0f;
 }
@@ -101,7 +101,7 @@ float LookupLightAmount(samplerCUBE buffer, float4 WorldPos, float4 LightPos, fl
 	LightDir = LightDir / Distance;
 	Distance = Distance / LightPos.w;
 
-	Blend = max(1.0f - Blend, saturate(Distance) * TESR_ShadowData.y);
+	Blend = max(1.0f - Blend, saturate(Distance) * TESR_ShadowCubeData.y);
 
 	for (y = -2.5f; y <= 2.5f; y += 1.0f) {
 		for (x = -2.5f; x <= 2.5f; x += 1.0f) {
