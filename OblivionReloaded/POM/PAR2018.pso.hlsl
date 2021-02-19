@@ -14,6 +14,7 @@ float4 PSLightColor[4] : register(c2);
 sampler2D ShadowMap : register(s5);
 sampler2D ShadowMaskMap : register(s6);
 float4 TESR_ShadowData : register(c10);
+float4 TESR_ShadowLightPosition[12] : register(c11);
 sampler2D TESR_ShadowMapBufferNear : register(s8) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
 sampler2D TESR_ShadowMapBufferFar : register(s9) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
 //
@@ -46,6 +47,7 @@ struct VS_OUTPUT {
     float4 Att0UV : TEXCOORD5;
     float4 ShadowUV0 : TEXCOORD6;
 	float4 ShadowUV1 : TEXCOORD7;
+    float4 InvPos : TEXCOORD8;
 };
 
 struct PS_OUTPUT {
@@ -109,7 +111,7 @@ PS_OUTPUT main(VS_OUTPUT IN) {
     r0.xyz = shades(q2.xyz, IN.Light2Dir.xyz) * PSLightColor[2].rgb;
     r1.xyz = shades(q2.xyz, IN.Light1Dir.xyz) * PSLightColor[1].rgb;
     r2.xyz = shades(q2.xyz, IN.Light0Dir.xyz) * PSLightColor[0].rgb;
-    r3.xyz = GetLightAmount(IN.ShadowUV0, IN.ShadowUV1);
+    r3.xyz = GetLightAmount(IN.ShadowUV0, IN.ShadowUV1, IN.InvPos);
     q21.xyz = (r3.xyz * r2.xyz) + (a0 * r1.xyz);
 
     OUT.Color.a = 1;

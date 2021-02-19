@@ -11,6 +11,7 @@ float4 PSLightColor[4] : register(c2);
 float4 TESR_SkinData : register(c6);
 float4 TESR_SkinColor : register(c7);
 float4 TESR_ShadowData : register(c10);
+float4 TESR_ShadowLightPosition[12] : register(c11);
 
 sampler2D BaseMap : register(s0);
 sampler2D NormalMap : register(s1);
@@ -48,6 +49,7 @@ struct VS_OUTPUT {
     float4 Att2UV : TEXCOORD5;
     float4 ShadowUV0 : TEXCOORD6;
 	float4 ShadowUV1 : TEXCOORD7;
+    float4 InvPos : TEXCOORD8;
 };
 
 struct PS_OUTPUT {
@@ -100,7 +102,7 @@ PS_OUTPUT main(VS_OUTPUT IN) {
     q9  = psSkin(q9,  PSLightColor[1].rgb, camera, IN.Light1Dir.xyz, norm);
     q12 = psSkin(q12, PSLightColor[2].rgb, camera, IN.Light2Dir.xyz, norm);
 
-    q27  = GetLightAmountSkin(IN.ShadowUV0, IN.ShadowUV1) * q10;
+    q27  = GetLightAmountSkin(IN.ShadowUV0, IN.ShadowUV1, IN.InvPos) * q10;
     q27 += saturate(1 - att13 - att15) * q12;
     q27 += saturate(1 - att2  - att14) * q9;
 

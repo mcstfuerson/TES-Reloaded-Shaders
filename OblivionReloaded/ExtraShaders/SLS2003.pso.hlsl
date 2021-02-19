@@ -10,6 +10,7 @@ float4 AmbientColor : register(c1);
 float4 PSLightColor[4] : register(c2);
 float4 Toggles : register(c7);
 float4 TESR_ShadowData : register(c8);
+float4 TESR_ShadowLightPosition[12] : register(c9);
 
 sampler2D BaseMap : register(s0);
 sampler2D NormalMap : register(s1);
@@ -39,6 +40,7 @@ struct VS_OUTPUT {
     float3 texcoord_1 : TEXCOORD1_centroid;
 	float4 texcoord_6 : TEXCOORD6;
     float4 texcoord_7 : TEXCOORD7;
+    float4 texcoord_8 : TEXCOORD8;
     float3 LCOLOR_0 : COLOR0;
     float4 LCOLOR_1 : COLOR1;
 };
@@ -67,7 +69,7 @@ PS_OUTPUT main(VS_OUTPUT IN) {
     r0.xyzw = tex2D(NormalMap, IN.BaseUV.xy);
     r3.xyz = shades(normalize(expand(r0.xyz)), IN.texcoord_1.xyz) * PSLightColor[0].rgb;
     r0.xyzw = tex2D(BaseMap, IN.BaseUV.xy);
-    q2.xyz = max((GetLightAmount(IN.texcoord_6, IN.texcoord_7) * r3.xyz) + AmbientColor.rgb, 0);
+    q2.xyz = max((GetLightAmount(IN.texcoord_6, IN.texcoord_7, IN.texcoord_8) * r3.xyz) + AmbientColor.rgb, 0);
     q3.xyz = (Toggles.x <= 0.0 ? r0.xyz : (r0.xyz * IN.LCOLOR_0.xyz));
     q4.xyz = q2.xyz * q3.xyz;
     q5.xyz = (Toggles.y <= 0.0 ? q4.xyz : ((IN.LCOLOR_1.w * (IN.LCOLOR_1.xyz - (q3.xyz * q2.xyz))) + q4.xyz));

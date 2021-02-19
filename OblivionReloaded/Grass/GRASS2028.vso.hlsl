@@ -21,6 +21,7 @@ float4 FogParam : register(c15);
 float4 InstanceData[228] : register(c20);
 float4 TESR_GrassScale : register(c248);
 row_major float4x4 TESR_ShadowCameraToLightTransform : register(c249);
+row_major float4x4 TESR_InvViewProjectionTransform : register(c16);
 
 // Registers:
 //
@@ -62,6 +63,7 @@ struct VS_OUTPUT {
     float3 texcoord_4 : TEXCOORD4;
     float4 texcoord_5 : TEXCOORD5;
 	float4 texcoord_6 : TEXCOORD6;
+    float4 texcoord_8 : TEXCOORD8;
 };
 
 // Code:
@@ -93,7 +95,7 @@ VS_OUTPUT main(VS_INPUT IN) {
     OUT.color_0.rgb = FogColor.rgb;
     OUT.texcoord_0.xy = IN.LTEXCOORD_0.xy;
 	scale.xyz = ScaleMask.xyz * TESR_GrassScale.xyz;
-    r1.xyz = (((r0.y * InstanceData[0 + IN.LTEXCOORD_1.x].w) * scale.xyz) + r0.z) * IN.LPOSITION.xyz;
+    r1.xyz = (((r0.y * InstanceData[0 + IN.LTEXCOORD_1.x].w) * scale.xyz) + TESR_GrassScale.w) * IN.LPOSITION.xyz;
     r0.z = 0;
     r0.y = -r0.w;
     r2.y = dot(r0.wxz, r1.xyz);
@@ -111,6 +113,7 @@ VS_OUTPUT main(VS_INPUT IN) {
     OUT.texcoord_5.w = r1.x * (1 - r1.y);
     OUT.texcoord_5.xyz = r2.xyz * AddlParams.x;
 	OUT.texcoord_6 = mul(r0, TESR_ShadowCameraToLightTransform);
+    OUT.texcoord_8 = mul(r0, TESR_InvViewProjectionTransform);
 	
     return OUT;
 };

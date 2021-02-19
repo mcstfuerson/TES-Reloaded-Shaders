@@ -13,6 +13,7 @@ row_major float4x4 ShadowProj : register(c21);
 float4 ShadowProjData : register(c25);
 float4 ShadowProjTransform : register(c26);
 row_major float4x4 TESR_ShadowCameraToLightTransform : register(c85);
+row_major float4x4 TESR_InvViewProjectionTransform : register(c70);
 
 // Registers:
 //
@@ -54,6 +55,7 @@ struct VS_OUTPUT {
     float3 LTEXCOORD_6 : TEXCOORD6;
     float4 LTEXCOORD_1 : TEXCOORD1;
     float4 LTEXCOORD_7 : TEXCOORD7;
+    float4 LTEXCOORD_8 : TEXCOORD8;
 };
 
 // Code:
@@ -78,6 +80,7 @@ VS_OUTPUT main(VS_INPUT IN) {
     OUT.LTEXCOORD_6.xyz = IN.LPOSITION.xyz;
     OUT.LTEXCOORD_7.w = q0.x * FogParam.z;
     OUT.LTEXCOORD_7.xyz = FogColor.rgb;
+    OUT.LTEXCOORD_8 = mul(r0, TESR_InvViewProjectionTransform);
 
     return OUT;
 };

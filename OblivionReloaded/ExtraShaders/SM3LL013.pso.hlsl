@@ -20,6 +20,7 @@ sampler2D ShadowMask : register(s3);
 float4 ToggleADTS : register(c5);
 float4 ToggleNumLights : register(c6);
 float4 TESR_ShadowData : register(c17);
+float4 TESR_ShadowLightPosition[12] : register(c18);
 sampler2D TESR_ShadowMapBufferNear : register(s8) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
 sampler2D TESR_ShadowMapBufferFar : register(s9) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
 
@@ -61,6 +62,7 @@ struct VS_OUTPUT {
     float3 LTEXCOORD_6 : TEXCOORD6_centroid;
     float4 LTEXCOORD_1 : TEXCOORD1;
     float4 LTEXCOORD_7 : TEXCOORD7_centroid;
+    float4 LTEXCOORD_8 : TEXCOORD8;
 };
 
 struct PS_OUTPUT {
@@ -168,7 +170,7 @@ PS_OUTPUT main(VS_OUTPUT IN) {
 
     if (0 != r4.w) {
         r0.w = 1;
-        q6.xyz = GetLightAmount(IN.LTEXCOORD_1,1);
+        q6.xyz = GetLightAmount(IN.LTEXCOORD_1, 1, IN.LTEXCOORD_8);
         l7.xyz = ((r2.w * (2 * ((IN.LCOLOR_0.y * (r6.x + HairTint.rgb)) + 0.5))) + (r3.w * 0.7)) * LightData[0].xyz;
         r1.xyz = (max(r4.z, 0) * l7.xyz) * q6.xyz;
         r4.xyz = q6.xyz * (shade(r5.xyz, r4.xyz) * LightData[0].xyz);

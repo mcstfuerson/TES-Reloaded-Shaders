@@ -11,6 +11,7 @@ float4 PSLightColor[4] : register(c2);
 float4 EmittanceColor : register(c6);
 float4 Toggles : register(c7);
 float4 TESR_ShadowData : register(c8);
+float4 TESR_ShadowLightPosition[12] : register(c9);
 
 sampler2D BaseMap : register(s0);
 sampler2D NormalMap : register(s1);
@@ -44,6 +45,7 @@ struct VS_OUTPUT {
     float3 texcoord_3 : TEXCOORD3_centroid;
 	float4 texcoord_6 : TEXCOORD6;
     float4 texcoord_7 : TEXCOORD7;
+    float4 texcoord_8 : TEXCOORD8;
     float2 LCOLOR_0 : COLOR0;
     float4 LCOLOR_1 : COLOR1;
 };
@@ -78,7 +80,7 @@ PS_OUTPUT main(VS_OUTPUT IN) {
     r0.xyz = normalize(expand(r0.xyz));
     r2.xy = r0.xy * 0.5;
     r6.x = dot(r0.xyz, IN.texcoord_1.xyz);
-    q3.xyz = GetLightAmount(IN.texcoord_6, IN.texcoord_7);
+    q3.xyz = GetLightAmount(IN.texcoord_6, IN.texcoord_7, IN.texcoord_8);
     r1.xyz = (0.5 * r0.xyz) + const_4.xyz;
     q16.xyz = r1.xyz / sqrt((((r0.z * 0.5) + 1) * r1.z) + ((r2.y * r1.y) + (r2.x * r1.x)));
     r1.xyzw = tex2D(GlowMap, IN.BaseUV.xy);

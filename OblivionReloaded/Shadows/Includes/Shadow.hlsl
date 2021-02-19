@@ -1,4 +1,5 @@
 static const float BIAS = 0.001f;
+static const float cullModifier = 1.0f;
 
 float LookupFar(float4 ShadowPos, float2 OffSet) {
 
@@ -40,11 +41,12 @@ float Lookup(float4 ShadowPos, float2 OffSet) {
 
 }
 
-float GetLightAmount(float4 ShadowPos, float4 ShadowPosFar) {
+float GetLightAmount(float4 ShadowPos, float4 ShadowPosFar, float4 InvPos) {
 
 	float Shadow = 0.0f;
 	float x;
 	float y;
+	float distToExternalLight = 0.0f;
 
 	ShadowPos.xyz /= ShadowPos.w;
 	if (ShadowPos.x < -1.0f || ShadowPos.x > 1.0f ||
@@ -61,7 +63,16 @@ float GetLightAmount(float4 ShadowPos, float4 ShadowPosFar) {
 		}
 	}
 	Shadow /= 9.0f;
-	return Shadow;
+
+	for (int j = 0; j < 6; j++) {
+		if (TESR_ShadowLightPosition[j].w) {
+			distToExternalLight = distance(InvPos.xyz, TESR_ShadowLightPosition[j].xyz);
+			if (distToExternalLight < TESR_ShadowLightPosition[j].w) {
+				Shadow += (saturate(1.000f - (distToExternalLight / (TESR_ShadowLightPosition[j].w))) * cullModifier);
+			}
+		}
+	}
+	return saturate(Shadow);
 
 }
 
@@ -89,11 +100,12 @@ float GetLightAmountSkinFar(float4 ShadowPos) {
 
 }
 
-float GetLightAmountSkin(float4 ShadowPos, float4 ShadowPosFar) {
+float GetLightAmountSkin(float4 ShadowPos, float4 ShadowPosFar, float4 InvPos) {
 
 	float Shadow = 0.0f;
 	float x;
 	float y;
+	float distToExternalLight = 0.0f;
 
 	ShadowPos.xyz /= ShadowPos.w;
 	if (ShadowPos.x < -1.0f || ShadowPos.x > 1.0f ||
@@ -109,15 +121,25 @@ float GetLightAmountSkin(float4 ShadowPos, float4 ShadowPosFar) {
 		}
 	}
 	Shadow /= 25.0f;
-	return Shadow;
+
+	for (int j = 0; j < 6; j++) {
+		if (TESR_ShadowLightPosition[j].w) {
+			distToExternalLight = distance(InvPos.xyz, TESR_ShadowLightPosition[j].xyz);
+			if (distToExternalLight < TESR_ShadowLightPosition[j].w) {
+				Shadow += (saturate(1.000f - (distToExternalLight / (TESR_ShadowLightPosition[j].w))) * cullModifier);
+			}
+		}
+	}
+	return saturate(Shadow);
 
 }
 
-float GetLightAmountGrass(float4 ShadowPos) {
+float GetLightAmountGrass(float4 ShadowPos, float4 InvPos) {
 
 	float Shadow = 0.0f;
 	float x;
 	float y;
+	float distToExternalLight = 0.0f;
 
 	ShadowPos.xyz /= ShadowPos.w;
 	if (ShadowPos.x < -1.0f || ShadowPos.x > 1.0f ||
@@ -128,6 +150,15 @@ float GetLightAmountGrass(float4 ShadowPos) {
 	ShadowPos.x = ShadowPos.x * 0.5f + 0.5f;
 	ShadowPos.y = ShadowPos.y * -0.5f + 0.5f;
 	Shadow = Lookup(ShadowPos, float2(0.0f, 0.0f));
-	return Shadow;
+
+	for (int j = 0; j < 6; j++) {
+		if (TESR_ShadowLightPosition[j].w) {
+			distToExternalLight = distance(InvPos.xyz, TESR_ShadowLightPosition[j].xyz);
+			if (distToExternalLight < TESR_ShadowLightPosition[j].w) {
+				Shadow += (saturate(1.000f - (distToExternalLight / (TESR_ShadowLightPosition[j].w))) * cullModifier);
+			}
+		}
+	}
+	return saturate(Shadow);
 
 }
