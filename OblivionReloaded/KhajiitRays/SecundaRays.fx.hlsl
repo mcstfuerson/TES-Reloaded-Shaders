@@ -4,16 +4,12 @@ float4x4 TESR_ViewTransform;
 float4x4 TESR_ProjectionTransform;
 float4 TESR_ReciprocalResolution;
 float4 TESR_CameraForward;
-float4 TESR_MasserDirection;
-float4 TESR_MasserAmount;
 float4 TESR_SecundaDirection;
 float4 TESR_SecundaAmount;
-float4 TESR_GameTime;
-float4 TESR_SunColor;
-float4 TESR_SunAmount;
 float4 TESR_SecundaRaysRay;
 float4 TESR_SecundaRaysRayColor;
 float4 TESR_SecundaRaysData;
+float4 TESR_RaysPhaseCoeff;
 
 sampler2D TESR_RenderedBuffer : register(s0) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
 sampler2D TESR_DepthBuffer : register(s1) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
@@ -113,10 +109,10 @@ float3 BlendSoftLight(float3 a, float3 b)
 
 float4 SunCombine(VSOUT IN) : COLOR0
 {
-	float Amount = saturate(TESR_SecundaAmount.x);
+	float Amount = saturate(TESR_SecundaAmount.x * TESR_RaysPhaseCoeff.x);
 	float4 ori = tex2D(TESR_SourceBuffer, IN.UVCoord);
 	float4 shaft = tex2D(TESR_RenderedBuffer, IN.UVCoord) * TESR_SecundaRaysData.z * Amount;
-	float3 ray = TESR_SecundaRaysRayColor.rgb;//TESR_SunColor.rgb * TESR_SecundaRaysRayColor.rgb;
+	float3 ray = TESR_SecundaRaysRayColor.rgb;
 	shaft.rgb *= (-forward) * ray * saturate(1.0f - ori.rgb);
 
 	float4 color = ori + shaft;
