@@ -185,6 +185,8 @@ PS_OUTPUT main(VS_OUTPUT IN, float2 PixelPos : VPOS) {
 
 	water_result.rgb += ditherMat[ PixelPos.x%4 ][ PixelPos.y%4 ] / 255;
 
+	water_result.rgb = saturate(water_result.rgb);
+
 	OUT.color_0.rgb = water_result.rgb;
 	OUT.color_0.a = 1;
 

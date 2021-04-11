@@ -238,7 +238,9 @@ PS_OUTPUT main(VS_OUTPUT IN, float2 PixelPos : VPOS){
 	OUT.color_0.rgb = lerp(water_result.rgb, color.rgb, saturate( pow(saturate(exp(world_pos.z/(800*shoreFactor))), 90) ));
 	OUT.color_0.a = 1;
 
-    return OUT;
+	OUT.color_0.rgb = saturate(OUT.color_0.rgb);
+
+	return OUT;
 };
 
 // approximately 84 instruction slots used (4 texture, 80 arithmetic)
