@@ -12,6 +12,7 @@ float4 Toggles : register(c7);
 float4 TESR_SkinData : register(c8);
 float4 TESR_SkinColor : register(c9);
 float4 TESR_ShadowData : register(c10);
+float4 TESR_ShadowLightPosition[12] : register(c11);
 
 sampler2D BaseMap : register(s0);
 sampler2D NormalMap : register(s1);
@@ -48,6 +49,7 @@ struct VS_OUTPUT {
     float3 CameraDir : TEXCOORD5_centroid;
 	float4 ShadowUV0 : TEXCOORD6;
     float4 ShadowUV1 : TEXCOORD7;
+    float4 InvPos : TEXCOORD8;
     float3 Color : COLOR0;
     float4 Fog : COLOR1;
 };
@@ -96,7 +98,7 @@ PS_OUTPUT main(VS_OUTPUT IN) {
 	
     r5 = psSkin(r5, PSLightColor[0].rgb, camera, IN.Light0Dir.xyz, norm);
 	
-    q7 = max((GetLightAmountSkin(IN.ShadowUV0, IN.ShadowUV1) * r5) + AmbientColor.rgb, 0);
+    q7 = max((GetLightAmountSkin(IN.ShadowUV0, IN.ShadowUV1, IN.InvPos) * r5) + AmbientColor.rgb, 0);
     q8 = (Toggles.x <= 0.0 ? q18 : (q18 * IN.Color.rgb));
     q9 = q7 * q8;
     q10 = (Toggles.y <= 0.0 ? q9 : ((IN.Fog.a * (IN.Fog.rgb - (q8 * q7))) + q9));

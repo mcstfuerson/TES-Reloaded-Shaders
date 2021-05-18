@@ -10,6 +10,7 @@ float4 AmbientColor : register(c1);
 float4 PSLightColor[4] : register(c2);
 float4 TESR_TerrainData : register(c6);
 float4 TESR_ShadowData : register(c7);
+float4 TESR_ShadowLightPosition[12] : register(c8);
 
 sampler2D BaseMap : register(s0);
 sampler2D NormalMap : register(s1);
@@ -44,6 +45,7 @@ struct VS_OUTPUT {
     float3 texcoord_3 : TEXCOORD3_centroid;
     float4 texcoord_6 : TEXCOORD6;
 	float4 texcoord_7 : TEXCOORD7;
+    float4 texcoord_8 : TEXCOORD8;
     float4 color_0 : COLOR0;
     float4 color_1 : COLOR1;
 };
@@ -70,7 +72,7 @@ PS_OUTPUT main(VS_OUTPUT IN) {
     r0.xyz = tex2D(NormalMap, IN.NormalUV.xy).xyz;
     r3.xyz = tex2D(BaseMap, IN.BaseUV.xy).xyz;
 	r0.x = shades((IN.texcoord_3.xyz * 2) - 1, normalize(expand(r0.xyz)));
-    r0.xyz = r3.xyz * ((GetLightAmount(IN.texcoord_6, IN.texcoord_7) * (r0.x * PSLightColor[0].rgb)) + AmbientColor.rgb);
+    r0.xyz = r3.xyz * ((GetLightAmount(IN.texcoord_6, IN.texcoord_7, IN.texcoord_8) * (r0.x * PSLightColor[0].rgb)) + AmbientColor.rgb);
 	q0 = dot(PSLightColor[1].rgba, IN.color_0.rgba) + dot(PSLightColor[2].rgba, IN.color_1.rgba);
 	spclr = smoothstep(0.0, 0.25, length(r3.rgb)) * (r3.b * 2.0 * TESR_TerrainData.z) + 1.0;
     OUT.color_0.a = saturate(((q0 * 2) + 0.5) - 1);

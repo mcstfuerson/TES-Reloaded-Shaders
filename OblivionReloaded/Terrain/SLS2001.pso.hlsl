@@ -61,60 +61,60 @@ PS_OUTPUT main(VS_OUTPUT IN) {
     float4 r0;
     float3 r1;
     float4 r2;
-	float spclr;
-	
-// SMOOTH NORMALS
+    float spclr;
 
-    r2.xyzw  = tex2D(TESR_samplerNormalMap, IN.BaseUV.xy);
-    r2.xyz   = expand(r2.xyz);
+    // SMOOTH NORMALS
 
-    r2.xyz  += expand(tex2D(TESR_samplerNormalMap, IN.BaseUV.xy + float2(0,  1.0 / 1024.0)).xyz) * 0.666;
-    r2.xyz  += expand(tex2D(TESR_samplerNormalMap, IN.BaseUV.xy + float2( 1.0 / 1024.0, 0)).xyz) * 0.666;
-    r2.xyz  += expand(tex2D(TESR_samplerNormalMap, IN.BaseUV.xy + float2(0, -1.0 / 1024.0)).xyz) * 0.666;
-    r2.xyz  += expand(tex2D(TESR_samplerNormalMap, IN.BaseUV.xy + float2(-1.0 / 1024.0, 0)).xyz) * 0.666;
+    r2.xyzw = tex2D(TESR_samplerNormalMap, IN.BaseUV.xy);
+    r2.xyz = expand(r2.xyz);
 
-    r2.xyz  += expand(tex2D(TESR_samplerNormalMap, IN.BaseUV.xy + float2( 1.0 / 1536.0,  1.0 / 1536.0)).xyz) * 0.333;
-    r2.xyz  += expand(tex2D(TESR_samplerNormalMap, IN.BaseUV.xy + float2(-1.0 / 1536.0,  1.0 / 1536.0)).xyz) * 0.333;
-    r2.xyz  += expand(tex2D(TESR_samplerNormalMap, IN.BaseUV.xy + float2( 1.0 / 1536.0, -1.0 / 1536.0)).xyz) * 0.333;
-    r2.xyz  += expand(tex2D(TESR_samplerNormalMap, IN.BaseUV.xy + float2(-1.0 / 1536.0, -1.0 / 1536.0)).xyz) * 0.333;
+    r2.xyz += expand(tex2D(TESR_samplerNormalMap, IN.BaseUV.xy + float2(0, 1.0 / 1024.0)).xyz) * 0.666;
+    r2.xyz += expand(tex2D(TESR_samplerNormalMap, IN.BaseUV.xy + float2(1.0 / 1024.0, 0)).xyz) * 0.666;
+    r2.xyz += expand(tex2D(TESR_samplerNormalMap, IN.BaseUV.xy + float2(0, -1.0 / 1024.0)).xyz) * 0.666;
+    r2.xyz += expand(tex2D(TESR_samplerNormalMap, IN.BaseUV.xy + float2(-1.0 / 1024.0, 0)).xyz) * 0.666;
 
-    r2.xyz   = normalize(r2.xyz);
+    r2.xyz += expand(tex2D(TESR_samplerNormalMap, IN.BaseUV.xy + float2(1.0 / 1536.0, 1.0 / 1536.0)).xyz) * 0.333;
+    r2.xyz += expand(tex2D(TESR_samplerNormalMap, IN.BaseUV.xy + float2(-1.0 / 1536.0, 1.0 / 1536.0)).xyz) * 0.333;
+    r2.xyz += expand(tex2D(TESR_samplerNormalMap, IN.BaseUV.xy + float2(1.0 / 1536.0, -1.0 / 1536.0)).xyz) * 0.333;
+    r2.xyz += expand(tex2D(TESR_samplerNormalMap, IN.BaseUV.xy + float2(-1.0 / 1536.0, -1.0 / 1536.0)).xyz) * 0.333;
 
-// SMOOTH COLORS
+    r2.xyz = normalize(r2.xyz);
 
-    r0.xyz  = GetYUV(tex2D(TESR_samplerBaseMap, IN.BaseUV.xy).rgb);
+    // SMOOTH COLORS
 
-    r0.xyz += GetYUV(tex2D(TESR_samplerBaseMap, IN.BaseUV.xy + float2(0,  1.0 / 2048.0)).rgb).rgb * float3(0.0, 0.666, 0.666);
-    r0.xyz += GetYUV(tex2D(TESR_samplerBaseMap, IN.BaseUV.xy + float2( 1.0 / 2048.0, 0)).rgb).rgb * float3(0.0, 0.666, 0.666);
+    r0.xyz = GetYUV(tex2D(TESR_samplerBaseMap, IN.BaseUV.xy).rgb);
+
+    r0.xyz += GetYUV(tex2D(TESR_samplerBaseMap, IN.BaseUV.xy + float2(0, 1.0 / 2048.0)).rgb).rgb * float3(0.0, 0.666, 0.666);
+    r0.xyz += GetYUV(tex2D(TESR_samplerBaseMap, IN.BaseUV.xy + float2(1.0 / 2048.0, 0)).rgb).rgb * float3(0.0, 0.666, 0.666);
     r0.xyz += GetYUV(tex2D(TESR_samplerBaseMap, IN.BaseUV.xy + float2(0, -1.0 / 2048.0)).rgb).rgb * float3(0.0, 0.666, 0.666);
     r0.xyz += GetYUV(tex2D(TESR_samplerBaseMap, IN.BaseUV.xy + float2(-1.0 / 2048.0, 0)).rgb).rgb * float3(0.0, 0.666, 0.666);
 
-    r0.yz += GetYUV(tex2D(TESR_samplerBaseMap, IN.BaseUV.xy + float2( 1.0 / 3072.0,  1.0 / 3072.0)).rgb).gb * 0.333;
-    r0.yz += GetYUV(tex2D(TESR_samplerBaseMap, IN.BaseUV.xy + float2(-1.0 / 3072.0,  1.0 / 3072.0)).rgb).gb * 0.333;
-    r0.yz += GetYUV(tex2D(TESR_samplerBaseMap, IN.BaseUV.xy + float2( 1.0 / 3072.0, -1.0 / 3072.0)).rgb).gb * 0.333;
+    r0.yz += GetYUV(tex2D(TESR_samplerBaseMap, IN.BaseUV.xy + float2(1.0 / 3072.0, 1.0 / 3072.0)).rgb).gb * 0.333;
+    r0.yz += GetYUV(tex2D(TESR_samplerBaseMap, IN.BaseUV.xy + float2(-1.0 / 3072.0, 1.0 / 3072.0)).rgb).gb * 0.333;
+    r0.yz += GetYUV(tex2D(TESR_samplerBaseMap, IN.BaseUV.xy + float2(1.0 / 3072.0, -1.0 / 3072.0)).rgb).gb * 0.333;
     r0.yz += GetYUV(tex2D(TESR_samplerBaseMap, IN.BaseUV.xy + float2(-1.0 / 3072.0, -1.0 / 3072.0)).rgb).gb * 0.333;
 
-    r0.xyz  = GetRGB(r0.xyz / float3(1.0, 5.0, 5.0)) * float3(1.1,1.2,1.09);
+    r0.xyz = GetRGB(r0.xyz / float3(1.0, 5.0, 5.0)) * float3(1.1, 1.2, 1.09);
 
-// BETTER NOISE
+    // BETTER NOISE
 
     float3 noisec = (tex2D(NoiseMap, IN.BaseUV.xy * 20).xyz * 2 + tex2D(NoiseMap, IN.BaseUV.xy * 2).xyz) * 0.3333;
-    r1.x   = saturate(0.50 + 1.25 * (smoothstep(1.0, 0.0, pow(noisec.x, 0.5))));
+    r1.x = saturate(0.50 + 1.25 * (smoothstep(1.0, 0.0, pow(noisec.x, 0.5))));
     r1.xyz = lerp(r1.x, 1, pow(length(r0.rgb) / length(1), 2));
-	
+
     float3 noisen = expand(tex2D(TESR_samplerNoise, IN.BaseUV.xy * 40).xyz);
     r2.xyz = normalize(r2.xyz + float3(noisen.xy * TESR_TerrainData.y, 0));
-	
-	float3 LightDir = IN.Light0Dir.xyz;
-	LightDir.x = LightDir.x < 0.4 ? max(LightDir.y, 0.8) : LightDir.x; // Trick to avoid to flat the bumpmap when midday
-	
+
+    float3 LightDir = IN.Light0Dir.xyz;
+    //LightDir.x = LightDir.x < 0.4 ? max(LightDir.y, 0.8) : LightDir.x; // Trick to avoid to flat the bumpmap when midday
+
     q0.xyz = (shades(r2.xyz, LightDir.xyz) * PSLightColor[0].rgb) + AmbientColor.rgb;
     q1.xyz = r0.xyz * max(q0.xyz, 0);
     q1.xyz = q1.xyz * r1.x;
     q1.xyz = (Toggles.y <= 0.0 ? q1.xyz : ((IN.Fog.a * (IN.Fog.rgb - q1.xyz)) + q1.xyz));
-	
-	spclr = smoothstep(0.0, 0.25, length(r0.rgb)) * (r0.b * 2.0 * TESR_TerrainData.x) + 1.0;
-	
+
+    spclr = smoothstep(0.0, 0.25, length(r0.rgb)) * (r0.b * 2.0 * TESR_TerrainData.x) + 1.0;
+
     OUT.Color.a = (0.1 - IN.FarClip) * AmbientColor.a;
     OUT.Color.rgb = q1.xyz * spclr;
 
