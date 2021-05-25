@@ -14,6 +14,22 @@ float4 TESR_SkinColor : register(c7);
 sampler2D BaseMap : register(s0);
 sampler2D NormalMap : register(s1);
 sampler2D AttenuationMap : register(s4);
+float4 TESR_ShadowCubeData : register(c10);
+float4 TESR_ShadowLightPosition[12] : register(c14);
+float4 TESR_ShadowCubeMapBlend : register(c11);
+float4 TESR_ShadowCubeMapBlend2 : register(c12);
+float4 TESR_ShadowCubeMapBlend3 : register(c13);
+samplerCUBE TESR_ShadowCubeMapBuffer0 : register(s5) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; ADDRESSW = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
+samplerCUBE TESR_ShadowCubeMapBuffer1 : register(s6) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; ADDRESSW = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
+samplerCUBE TESR_ShadowCubeMapBuffer2 : register(s7) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; ADDRESSW = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
+samplerCUBE TESR_ShadowCubeMapBuffer3 : register(s8) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; ADDRESSW = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
+samplerCUBE TESR_ShadowCubeMapBuffer4 : register(s9) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; ADDRESSW = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
+samplerCUBE TESR_ShadowCubeMapBuffer5 : register(s10) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; ADDRESSW = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
+samplerCUBE TESR_ShadowCubeMapBuffer6 : register(s11) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; ADDRESSW = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
+samplerCUBE TESR_ShadowCubeMapBuffer7 : register(s12) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; ADDRESSW = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
+samplerCUBE TESR_ShadowCubeMapBuffer8 : register(s13) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; ADDRESSW = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
+samplerCUBE TESR_ShadowCubeMapBuffer9 : register(s14) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; ADDRESSW = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
+samplerCUBE TESR_ShadowCubeMapBuffer10 : register(s15) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; ADDRESSW = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
 //
 //
 // Registers:
@@ -40,6 +56,7 @@ struct VS_OUTPUT {
     float4 Att1UV : TEXCOORD4;
     float4 Att2UV : TEXCOORD5;
     float3 CameraDir : TEXCOORD7_centroid;
+    float4 texcoord_8 : TEXCOORD8;
 };
 
 struct PS_OUTPUT {
@@ -49,6 +66,7 @@ struct PS_OUTPUT {
 // Code:
 
 #include "includes/Skin.hlsl"
+#include "../Shadows/Includes/ShadowCubeSkin.hlsl"
 
 PS_OUTPUT main(VS_OUTPUT IN) {
     PS_OUTPUT OUT;
@@ -73,6 +91,9 @@ PS_OUTPUT main(VS_OUTPUT IN) {
     float3 q9;
     float4 r0;
     float3 r3;
+    float Shadow;
+
+    Shadow = GetLightAmount(IN.texcoord_8);
 	
     norm = normalize(expand(tex2D(NormalMap, IN.BaseUV.xy).xyz));
     r0 = tex2D(BaseMap, IN.BaseUV.xy);
@@ -96,7 +117,7 @@ PS_OUTPUT main(VS_OUTPUT IN) {
     r3 += saturate(1 - att0 - att13) * q11;
 
     OUT.Color.a = r0.w;
-    OUT.Color.rgb = r3 + AmbientColor.rgb;
+    OUT.Color.rgb = Shadow * (r3 + AmbientColor.rgb);
 
     return OUT;
 };
