@@ -31,6 +31,7 @@ samplerCUBE TESR_ShadowCubeMapBuffer8 : register(s12) = sampler_state { ADDRESSU
 samplerCUBE TESR_ShadowCubeMapBuffer9 : register(s13) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; ADDRESSW = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
 samplerCUBE TESR_ShadowCubeMapBuffer10 : register(s14) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; ADDRESSW = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
 samplerCUBE TESR_ShadowCubeMapBuffer11 : register(s15) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; ADDRESSW = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
+float4 TESR_InteriorDimmer : register(c24);
 
 //
 //
@@ -90,12 +91,14 @@ PS_OUTPUT main(VS_OUTPUT IN) {
     float4 r1;
     float4 r4;
     float Shadow;
+    float4 r5;
+    float2 r6 = 0;
 
     Shadow = GetLightAmount(IN.texcoord_7);
 
     r4.xyzw = tex2D(NormalMap, IN.BaseUV.xy);			// partial precision
     r1.xyzw = tex2D(GlowMap, IN.BaseUV.xy);
-    r0.xyzw = tex2D(BaseMap, IN.BaseUV.xy);			// partial precision
+    r0.xyzw = tex2D(BaseMap, IN.BaseUV.xy);    r5 = tex2D(BaseMap, r6.xy);			// partial precision
     att2.x = tex2D(AttenuationMap, IN.texcoord_4.zw);			// partial precision
     att1.x = tex2D(AttenuationMap, IN.texcoord_4.xy);			// partial precision
     q0.xyz = normalize(expand(r4.xyz));			// partial precision
@@ -106,8 +109,27 @@ PS_OUTPUT main(VS_OUTPUT IN) {
     q6.xyz = q14.xyz * q5.xyz;			// partial precision
     q7.xyz = (Toggles.y <= 0.0 ? q6.xyz : ((IN.color_1.a * (IN.color_1.rgb - (q5.xyz * q14.xyz))) + q6.xyz));			// partial precision
     OUT.color_0.a = r0.w * AmbientColor.a;			// partial precision
-    OUT.color_0.rgb = q7.xyz * Shadow;			// partial precision
+    OUT.color_0.rgb = q7.xyz;			// partial precision
 
+    if ((r5.r > .9 && r5.g < .1 && r5.b <.1) && (r0.b > .1 && r0.g > .1)) {
+        /*OUT.color_0.r = .7;
+        OUT.color_0.g = .5;
+        OUT.color_0.b = .2;*/
+
+        OUT.color_0.rgb *= TESR_InteriorDimmer.x;
+    }
+    else if ((r5.r < .1 && r5.g < .1 && r5.b > .9)) {
+        OUT.color_0.rgb *= TESR_InteriorDimmer.x;
+    }
+    else if ((r5.r < .1 && r5.g >.9 && r5.b < .1) && ((r0.b - r0.r) > .065)) {
+        OUT.color_0.rgb *= TESR_InteriorDimmer.x;
+    }
+    else if ((r5.r > .9 && r5.g < .1 && r5.b > .9)) {
+        //Do nothing
+    }
+    else {
+        OUT.color_0.rgb *= Shadow;
+    }
     return OUT;
 };
 

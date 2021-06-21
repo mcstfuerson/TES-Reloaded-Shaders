@@ -24,6 +24,7 @@ samplerCUBE TESR_ShadowCubeMapBuffer8 : register(s12) = sampler_state { ADDRESSU
 samplerCUBE TESR_ShadowCubeMapBuffer9 : register(s13) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; ADDRESSW = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
 samplerCUBE TESR_ShadowCubeMapBuffer10 : register(s14) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; ADDRESSW = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
 samplerCUBE TESR_ShadowCubeMapBuffer11 : register(s15) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; ADDRESSW = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
+float4 TESR_InteriorDimmer : register(c16);
 
 // Registers:
 //
@@ -52,11 +53,36 @@ PS_OUTPUT main(VS_OUTPUT IN) {
 
     float4 r0;
     float Shadow;
+    float2 r1 = 0;
+    float4 r2;
 	
+
     r0 = tex2D(DiffuseMap, IN.DiffuseUV.xy);
+    r2 = tex2D(DiffuseMap, r1.xy);
     Shadow = GetLightAmount(IN.texcoord_7);
     OUT.color_0.a = r0.w;
-    OUT.color_0.rgb = Shadow * r0.xyz * IN.LCOLOR_0.xyz;
+    OUT.color_0.rgb = r0.xyz * IN.LCOLOR_0.xyz;
+
+    //if (r2.r > .9 && (OUT.color_0.b > .25 || OUT.color_0.g > .25)) {
+    if ((r2.r > .9 && r2.g < .1 && r2.b < .1) && (r0.b > .1 && r0.g > .1)) {
+        /*OUT.color_0.r = .7;
+        OUT.color_0.g = .5;
+        OUT.color_0.b = .2;*/
+
+        OUT.color_0.rgb *= TESR_InteriorDimmer.x;
+    }
+    else if ((r2.r < .1 && r2.g < .1 && r2.b > .9)) {
+        OUT.color_0.rgb *= TESR_InteriorDimmer.x;
+    }
+    else if ((r2.r < .1 && r2.g >.9 && r2.b < .1) && ((r0.b - r0.r) > .065)) {
+        OUT.color_0.rgb *= TESR_InteriorDimmer.x;
+    }
+    else if ((r2.r > .9 && r2.g < .1 && r2.b > .9)) {
+        //Do nothing
+    }
+    else {
+        OUT.color_0.rgb *= Shadow;
+    }
     return OUT;
 	
 };
