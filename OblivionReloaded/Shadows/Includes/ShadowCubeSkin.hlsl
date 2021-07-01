@@ -1,3 +1,4 @@
+float4 TESR_SunAmount : register(c223);
 
 static const float BIAS = 0.001f;
 static const float farMaxInc = 0.2f;
@@ -5,7 +6,7 @@ static const float nearMaxInc = 1.0f;
 
 float Lookup(samplerCUBE buffer, float3 LightDir, float Distance, float Blend, float2 OffSet) {
 	float Shadow = texCUBE(buffer, LightDir + float3(OffSet.x * TESR_ShadowCubeData.z, OffSet.y * TESR_ShadowCubeData.z, 0.0f)).r;
-	if (Shadow > 0.0f && Shadow < 1.0f && Shadow < Distance - BIAS) return Blend;
+	if (Shadow > 0.0f && Shadow < 1.0f && Shadow < Distance - BIAS) return saturate(Blend + (1 - TESR_SunAmount.w));
 	return 1.0f;
 }
 

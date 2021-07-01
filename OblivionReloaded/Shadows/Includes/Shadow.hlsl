@@ -1,3 +1,5 @@
+float4 TESR_SunAmount : register(c223);
+
 static const float BIAS = 0.001f;
 static const float cullModifier = 1.0f;
 
@@ -68,7 +70,7 @@ float GetLightAmount(float4 ShadowPos, float4 ShadowPosFar, float4 InvPos) {
 		if (TESR_ShadowLightPosition[j].w) {
 			distToExternalLight = distance(InvPos.xyz, TESR_ShadowLightPosition[j].xyz);
 			if (distToExternalLight < TESR_ShadowLightPosition[j].w) {
-				Shadow += (saturate(1.000f - (distToExternalLight / (TESR_ShadowLightPosition[j].w))) * cullModifier);
+				Shadow += (saturate(1.000f - (distToExternalLight / (TESR_ShadowLightPosition[j].w))) * TESR_SunAmount.w);
 			}
 		}
 	}
