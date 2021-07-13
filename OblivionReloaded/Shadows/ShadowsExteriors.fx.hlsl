@@ -15,6 +15,7 @@ float4 TESR_ShadowLightPosition2;
 float4 TESR_ShadowLightPosition3;
 float4 TESR_ShadowLightPosition4;
 float4 TESR_ShadowLightPosition5;
+float4 TESR_SunAmount;
 
 sampler2D TESR_RenderedBuffer : register(s0) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
 sampler2D TESR_DepthBuffer : register(s1) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
@@ -109,7 +110,7 @@ float AddProximityLight(float4 WorldPos, float4 ExternalLightPos, float Shadow) 
 	if (ExternalLightPos.w) {
 		float distToExternalLight = distance(WorldPos.xyz, ExternalLightPos.xyz);
 		if (distToExternalLight < ExternalLightPos.w) {
-			Shadow += (saturate(1.000f - (distToExternalLight / (ExternalLightPos.w)))* cullModifier);
+			Shadow += (saturate(1.000f - (distToExternalLight / (ExternalLightPos.w))) * TESR_SunAmount.w);
 		}
 	}
 	return Shadow;
