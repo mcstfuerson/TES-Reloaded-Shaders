@@ -85,11 +85,11 @@ PS_OUTPUT main(VS_OUTPUT IN) {
     r1.xyzw = tex2D(NormalMap, uv0.xy);			// partial precision
     r0.xyzw = tex2D(BaseMap, uv0.xy);			// partial precision
     q1.xyz = (shades(normalize(expand(r1.xyz)), IN.texcoord_1.xyz) * PSLightColor[0].rgb) + AmbientColor.rgb;			// partial precision
-    q3.xyz = (Toggles.x <= 0.0 ? r0.xyz : (r0.xyz * IN.color_0.rgb));			// partial precision
+    q3.xyz = (Toggles.x <= 0.0 ? r0.xyz : (r0.xyz * IN.color_0.rgb));    q3*= Shadow;			// partial precision
     q4.xyz = max(q1.xyz, 0) * q3.xyz;			// partial precision
     q5.xyz = (Toggles.y <= 0.0 ? q4.xyz : ((IN.color_1.a * (IN.color_1.rgb - (q3.xyz * max(q1.xyz, 0)))) + q4.xyz));			// partial precision
     OUT.color_0.a = AmbientColor.a;			// partial precision
-    OUT.color_0.rgb = q5.xyz * Shadow;			// partial precision
+    OUT.color_0.rgb = q5.xyz;			// partial precision
 
     return OUT;
 };
