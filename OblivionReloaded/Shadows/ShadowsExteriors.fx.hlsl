@@ -110,7 +110,7 @@ float AddProximityLight(float4 WorldPos, float4 ExternalLightPos, float Shadow) 
 	if (ExternalLightPos.w) {
 		float distToExternalLight = distance(WorldPos.xyz, ExternalLightPos.xyz);
 		if (distToExternalLight < ExternalLightPos.w) {
-			Shadow += (saturate(1.000f - (distToExternalLight / (ExternalLightPos.w))) * TESR_SunAmount.w);
+			Shadow += (saturate(1.000f - (distToExternalLight / (ExternalLightPos.w))));
 		}
 	}
 	return Shadow;
@@ -151,6 +151,11 @@ float GetLightAmount(float4 WorldPos, float4 ShadowPos, float4 ShadowPosFar) {
 float4 Shadow(VSOUT IN) : COLOR0{
 
 	float3 color = tex2D(TESR_RenderedBuffer, IN.UVCoord).rgb;
+
+	if (length(color) > 1.4f) {
+		return float4(color, 1.0f);
+	}
+
 	float depth = readDepth(IN.UVCoord);
 	float3 camera_vector = toWorld(IN.UVCoord) * depth;
 	float4 world_pos = float4(TESR_CameraPosition.xyz + camera_vector, 1.0f);
