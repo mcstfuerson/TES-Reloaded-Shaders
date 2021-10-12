@@ -4,8 +4,8 @@ static const float BIAS = 0.001f;
 static const float farMaxInc = 0.2f;
 static const float nearMaxInc = 1.0f;
 
-float Lookup(samplerCUBE buffer, float3 LightDir, float Distance, float Blend, float2 OffSet) {
-	float Shadow = texCUBE(buffer, LightDir + float3(OffSet.x * TESR_ShadowCubeData.z, OffSet.y * TESR_ShadowCubeData.z, 0.0f)).r;
+float Lookup(samplerCUBE buffer, float3 LightDir, float Distance, float Blend, float3 OffSet) {
+	float Shadow = texCUBE(buffer, LightDir + float3(OffSet.x * TESR_ShadowCubeData.z, OffSet.y * TESR_ShadowCubeData.z, OffSet.z * TESR_ShadowCubeData.z)).r;
 	if (Shadow > 0.0f && Shadow < 1.0f && Shadow < Distance - BIAS) return saturate(Blend + (1 - TESR_SunAmount.w));
 	return 1.0f;
 }
@@ -15,8 +15,9 @@ float LookupLightAmount(samplerCUBE buffer, float4 WorldPos, float4 LightPos, fl
 	float Shadow = 0.0f;
 	float3 LightDir;
 	float Distance;
-	float x;
-	float y;
+	float x = 0;
+	float y = 0;
+	float z = 0;
 
 	LightDir = WorldPos.xyz - LightPos.xyz;
 	LightDir.z *= -1;
@@ -24,14 +25,30 @@ float LookupLightAmount(samplerCUBE buffer, float4 WorldPos, float4 LightPos, fl
 	LightDir = LightDir / Distance;
 	Distance = Distance / LightPos.w;
 
-	Blend = max(1.0f - Blend, saturate(Distance) * TESR_ShadowCubeData.y);
+	Blend = max(1.0f - Blend, saturate(Distance));
 
-	for (y = -2.5f; y <= 2.5f; y += 1.0f) {
-		for (x = -2.5f; x <= 2.5f; x += 1.0f) {
-			Shadow += Lookup(buffer, LightDir, Distance, Blend, float2(x, y));
+	for (z = -3.0; z <= 3.0; z += 1.5) {
+		for (y = -3.0; y <= 3.0; y += 1.5) {
+			for (x = -3.0; x <= 3.0; x += 1.5) {
+				Shadow += Lookup(buffer, LightDir, Distance, Blend, float3(x, y, z));
+			}
 		}
 	}
-	Shadow /= 36.0f;
+	Shadow /= 125.0f;
+
+	/*for (z = -2.0; z <= 2.0; z += 1.5) {
+		for (y = -2.0; y <= 2.0; y += 1.5) {
+			for (x = -2.0; x <= 2.0; x += 1.5) {
+				Shadow += Lookup(buffer, LightDir, Distance, Blend, float3(x, y, z));
+			}
+		}
+	}
+
+	Shadow /= 27.0f;*/
+
+	if (Shadow < .7) {
+		Shadow *= TESR_ShadowCubeData.y;
+	}
 	return Shadow;
 
 }
