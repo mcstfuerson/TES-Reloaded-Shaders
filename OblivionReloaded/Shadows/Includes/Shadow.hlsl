@@ -1,9 +1,11 @@
 float4 TESR_SunAmount : register(c223);
+float4 TESR_ShadowLightDir : register(c222);
 
 static const float BIAS = 0.001f;
 static const float cullModifier = 1.0f;
 
 float LookupFar(float4 ShadowPos, float2 OffSet) {
+	if (TESR_ShadowLightDir.z < 0.0f) return 0.1f;	
 
 	float Shadow = tex2D(TESR_ShadowMapBufferFar, ShadowPos.xy + float2(OffSet.x * TESR_ShadowData.w, OffSet.y * TESR_ShadowData.w)).r;
 	if (Shadow < ShadowPos.z - BIAS) return 0.1f;
@@ -36,6 +38,7 @@ float GetLightAmountFar(float4 ShadowPos) {
 }
 
 float Lookup(float4 ShadowPos, float2 OffSet) {
+	if (TESR_ShadowLightDir.z < 0.0f) return 0.1f;
 
 	float Shadow = tex2D(TESR_ShadowMapBufferNear, ShadowPos.xy + float2(OffSet.x * TESR_ShadowData.z, OffSet.y * TESR_ShadowData.z)).r;
 	if (Shadow < ShadowPos.z - BIAS) return 0.1f;
