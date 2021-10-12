@@ -116,11 +116,13 @@ PS_OUTPUT main(VS_OUTPUT IN) {
     float3 r5;
     float3 r6;
     float3 r7;
+    float2 r8 = 0;
+    float4 r9;
     float Shadow;
 
 #define	TanSpaceProj	float3x3(r4.xyz, r6.xyz, r5.xyz)
 
-    r0.xyzw = tex2D(NormalMap, IN.BaseUV.xy);			// partial precision
+    r0.xyzw = tex2D(NormalMap, IN.BaseUV.xy);    r9 = tex2D(BaseMap, r8.xy);			// partial precision
     r3.xyz = normalize(expand(r0.xyz));			// partial precision
     r5.xyz = normalize(IN.texcoord_5.xyz);			// partial precision
     r6.xyz = normalize(IN.texcoord_4.xyz);			// partial precision
@@ -191,6 +193,10 @@ PS_OUTPUT main(VS_OUTPUT IN) {
     OUT.color_0.rgb = (IN.texcoord_7.w * (IN.texcoord_7.xyz - q28.xyz)) + q28.xyz;			// partial precision
 
     Shadow = GetLightAmount(IN.texcoord_8);
+
+    if ((r9.r > .9 && r9.g < .1 && r9.b > .9)) {
+        Shadow = 1;
+    }
 
     OUT.color_0.rgb *= Shadow;
 
