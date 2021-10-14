@@ -1,14 +1,12 @@
 float4 TESR_SunAmount : register(c223);
 float4 TESR_ShadowLightDir : register(c222);
-
-static const float BIAS = 0.001f;
-static const float cullModifier = 1.0f;
+float4 TESR_ShadowBiasForward : register(c221);
 
 float LookupFar(float4 ShadowPos, float2 OffSet) {
 	if (TESR_ShadowLightDir.z < 0.0f) return 0.1f;	
 
 	float Shadow = tex2D(TESR_ShadowMapBufferFar, ShadowPos.xy + float2(OffSet.x * TESR_ShadowData.w, OffSet.y * TESR_ShadowData.w)).r;
-	if (Shadow < ShadowPos.z - BIAS) return 0.1f;
+	if (Shadow < ShadowPos.z - TESR_ShadowBiasForward.w) return 0.1f;
 	return 1.0f;
 
 }
@@ -41,7 +39,7 @@ float Lookup(float4 ShadowPos, float2 OffSet) {
 	if (TESR_ShadowLightDir.z < 0.0f) return 0.1f;
 
 	float Shadow = tex2D(TESR_ShadowMapBufferNear, ShadowPos.xy + float2(OffSet.x * TESR_ShadowData.z, OffSet.y * TESR_ShadowData.z)).r;
-	if (Shadow < ShadowPos.z - BIAS) return 0.1f;
+	if (Shadow < ShadowPos.z - TESR_ShadowBiasForward.z) return 0.1f;
 	return 1.0f;
 
 }
@@ -131,7 +129,7 @@ float GetLightAmountSkin(float4 ShadowPos, float4 ShadowPosFar, float4 InvPos) {
 		if (TESR_ShadowLightPosition[j].w) {
 			distToExternalLight = distance(InvPos.xyz, TESR_ShadowLightPosition[j].xyz);
 			if (distToExternalLight < TESR_ShadowLightPosition[j].w) {
-				Shadow += (saturate(1.000f - (distToExternalLight / (TESR_ShadowLightPosition[j].w))) * cullModifier);
+				Shadow += (saturate(1.000f - (distToExternalLight / (TESR_ShadowLightPosition[j].w))) * TESR_SunAmount.w);
 			}
 		}
 	}
@@ -160,7 +158,7 @@ float GetLightAmountGrass(float4 ShadowPos, float4 InvPos) {
 		if (TESR_ShadowLightPosition[j].w) {
 			distToExternalLight = distance(InvPos.xyz, TESR_ShadowLightPosition[j].xyz);
 			if (distToExternalLight < TESR_ShadowLightPosition[j].w) {
-				Shadow += (saturate(1.000f - (distToExternalLight / (TESR_ShadowLightPosition[j].w))) * cullModifier);
+				Shadow += (saturate(1.000f - (distToExternalLight / (TESR_ShadowLightPosition[j].w))) * TESR_SunAmount.w);
 			}
 		}
 	}

@@ -16,6 +16,7 @@ float4 TESR_ShadowLightPosition3;
 float4 TESR_ShadowLightPosition4;
 float4 TESR_ShadowLightPosition5;
 float4 TESR_SunAmount;
+float4 TESR_ShadowBiasDeferred;
 
 sampler2D TESR_RenderedBuffer : register(s0) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
 sampler2D TESR_DepthBuffer : register(s1) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
@@ -27,8 +28,6 @@ static const float nearZ = TESR_ProjectionTransform._43 / TESR_ProjectionTransfo
 static const float farZ = (TESR_ProjectionTransform._33 * nearZ) / (TESR_ProjectionTransform._33 - 1.0f);
 static const float Zmul = nearZ * farZ;
 static const float Zdiff = farZ - nearZ;
-static const float BIAS = 0.001f;
-static const float cullModifier = 1.0f;
 
 struct VSOUT
 {
@@ -68,7 +67,7 @@ float3 toWorld(float2 tex)
 float LookupFar(float4 ShadowPos, float2 OffSet) {
 
 	float Shadow = tex2D(TESR_ShadowMapBufferFar, ShadowPos.xy + float2(OffSet.x * TESR_ShadowData.w, OffSet.y * TESR_ShadowData.w)).r;
-	if (Shadow < ShadowPos.z - BIAS) return TESR_ShadowData.y;
+	if (Shadow < ShadowPos.z - TESR_ShadowBiasDeferred.w) return TESR_ShadowData.y;
 	return 1.0f;
 
 }
@@ -100,7 +99,7 @@ float GetLightAmountFar(float4 ShadowPos) {
 float Lookup(float4 ShadowPos, float2 OffSet) {
 
 	float Shadow = tex2D(TESR_ShadowMapBufferNear, ShadowPos.xy + float2(OffSet.x * TESR_ShadowData.z, OffSet.y * TESR_ShadowData.z)).r;
-	if (Shadow < ShadowPos.z - BIAS) return TESR_ShadowData.y;
+	if (Shadow < ShadowPos.z - TESR_ShadowBiasDeferred.z) return TESR_ShadowData.y;
 	return 1.0f;
 
 }
