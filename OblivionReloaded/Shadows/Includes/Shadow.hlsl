@@ -3,11 +3,10 @@ float4 TESR_ShadowLightDir : register(c222);
 float4 TESR_ShadowBiasForward : register(c221);
 
 float LookupFar(float4 ShadowPos, float2 OffSet) {
-	if (TESR_ShadowLightDir.z < 0.0f) return 0.1f;	
 
 	float Shadow = tex2D(TESR_ShadowMapBufferFar, ShadowPos.xy + float2(OffSet.x * TESR_ShadowData.w, OffSet.y * TESR_ShadowData.w)).r;
 	if (Shadow < ShadowPos.z - TESR_ShadowBiasForward.w) return 0.1f;
-	return 1.0f;
+	return TESR_ShadowLightDir.w;
 
 }
 
@@ -36,11 +35,18 @@ float GetLightAmountFar(float4 ShadowPos) {
 }
 
 float Lookup(float4 ShadowPos, float2 OffSet) {
-	if (TESR_ShadowLightDir.z < 0.0f) return 0.1f;
 
 	float Shadow = tex2D(TESR_ShadowMapBufferNear, ShadowPos.xy + float2(OffSet.x * TESR_ShadowData.z, OffSet.y * TESR_ShadowData.z)).r;
 	if (Shadow < ShadowPos.z - TESR_ShadowBiasForward.z) return 0.1f;
-	return 1.0f;
+	return TESR_ShadowLightDir.w;
+
+}
+
+float LookupSkin(float4 ShadowPos, float2 OffSet) {
+
+	float Shadow = tex2D(TESR_ShadowMapBufferNear, ShadowPos.xy + float2(OffSet.x * TESR_ShadowData.z, OffSet.y * TESR_ShadowData.z)).r;
+	if (Shadow < ShadowPos.z - 0.0002f) return 0.1f;
+	return TESR_ShadowLightDir.w;
 
 }
 
@@ -118,12 +124,12 @@ float GetLightAmountSkin(float4 ShadowPos, float4 ShadowPosFar, float4 InvPos) {
 
 	ShadowPos.x = ShadowPos.x * 0.5f + 0.5f;
 	ShadowPos.y = ShadowPos.y * -0.5f + 0.5f;
-	for (y = -0.1f; y <= 0.1f; y += 0.05f) {
-		for (x = -0.1f; x <= 0.1f; x += 0.05f) {
-			Shadow += Lookup(ShadowPos, float2(x, y));
+	for (y = -2.5f; y <= 2.5f; y += 1.0f) {
+		for (x = -2.5f; x <= 2.5f; x += 1.0f) {
+			Shadow += LookupSkin(ShadowPos, float2(x, y));
 		}
 	}
-	Shadow /= 25.0f;
+	Shadow /= 36.0f;
 
 	for (int j = 0; j < 6; j++) {
 		if (TESR_ShadowLightPosition[j].w) {
