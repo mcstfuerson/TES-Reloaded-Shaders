@@ -12,6 +12,7 @@ float4 TESR_SkinData : register(c6);
 float4 TESR_SkinColor : register(c7);
 float4 TESR_ShadowData : register(c10);
 float4 TESR_ShadowLightPosition[12] : register(c11);
+float4 TESR_ShadowSkinData : register(c24);
 
 sampler2D BaseMap : register(s0);
 sampler2D NormalMap : register(s1);
@@ -19,7 +20,7 @@ sampler2D AttenuationMap : register(s4);
 sampler2D ShadowMap : register(s5);
 sampler2D ShadowMaskMap : register(s6);
 sampler2D TESR_ShadowMapBufferNear : register(s8) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
-sampler2D TESR_ShadowMapBufferFar : register(s9) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
+sampler2D TESR_ShadowMapBufferSkin : register(s10) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
 //
 //
 // Registers:
@@ -50,6 +51,7 @@ struct VS_OUTPUT {
     float4 ShadowUV0 : TEXCOORD6;
 	float4 ShadowUV1 : TEXCOORD7;
     float4 InvPos : TEXCOORD8;
+    float4 ShadowUV2 : TEXCOORD9;
 };
 
 struct PS_OUTPUT {
@@ -59,7 +61,7 @@ struct PS_OUTPUT {
 // Code:
 
 #include "includes/SKIN.hlsl"
-#include "../Shadows/Includes/Shadow.hlsl"
+#include "../Shadows/Includes/ShadowSkin.hlsl"
 
 PS_OUTPUT main(VS_OUTPUT IN) {
     PS_OUTPUT OUT;
@@ -102,7 +104,7 @@ PS_OUTPUT main(VS_OUTPUT IN) {
     q9  = psSkin(q9,  PSLightColor[1].rgb, camera, IN.Light1Dir.xyz, norm);
     q12 = psSkin(q12, PSLightColor[2].rgb, camera, IN.Light2Dir.xyz, norm);
 
-    q27  = GetLightAmountSkin(IN.ShadowUV0, IN.ShadowUV1, IN.InvPos) * q10;
+    q27  = GetLightAmountSkin(IN.ShadowUV2, IN.ShadowUV0, IN.InvPos) * q10;
     q27 += saturate(1 - att13 - att15) * q12;
     q27 += saturate(1 - att2  - att14) * q9;
 
