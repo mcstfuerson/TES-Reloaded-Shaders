@@ -1,6 +1,11 @@
+#ifndef __SHADOW_EXTERIOR_DEPENDENCY__
+#define __SHADOW_EXTERIOR_DEPENDENCY__
+
 float4 TESR_SunAmount : register(c223);
 float4 TESR_ShadowLightDir : register(c222);
 float4 TESR_ShadowBiasForward : register(c221);
+
+#endif // __SHADOW_EXTERIOR_DEPENDENCY__
 
 float LookupFar(float4 ShadowPos, float2 OffSet) {
 	float Shadow = tex2D(TESR_ShadowMapBufferFar, ShadowPos.xy + float2(OffSet.x * TESR_ShadowData.w, OffSet.y * TESR_ShadowData.w)).r;
