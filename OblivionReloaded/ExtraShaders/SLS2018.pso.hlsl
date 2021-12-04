@@ -14,9 +14,11 @@ sampler2D ShadowMap : register(s6);
 sampler2D ShadowMaskMap : register(s7);
 float4 Toggles : register(c7);
 float4 TESR_ShadowData : register(c8);
+float4 TESR_ShadowSkinData : register(c22);
 float4 TESR_ShadowLightPosition[12] : register(c9);
 sampler2D TESR_ShadowMapBufferNear : register(s8) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
 sampler2D TESR_ShadowMapBufferFar : register(s9) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
+sampler2D TESR_ShadowMapBufferSkin : register(s10) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
 
 // Registers:
 //
@@ -41,8 +43,10 @@ struct VS_OUTPUT {
 	float4 texcoord_6 : TEXCOORD6;
     float4 texcoord_7 : TEXCOORD7;
     float4 texcoord_8 : TEXCOORD8;
+    float4 texcoord_9 : TEXCOORD9;
     float3 LCOLOR_0 : COLOR0;
     float4 LCOLOR_1 : COLOR1;
+    float4 LCOLOR_2 : COLOR2;
 };
 
 struct PS_OUTPUT {
@@ -50,6 +54,7 @@ struct PS_OUTPUT {
 };
 
 #include "../Shadows/Includes/Shadow.hlsl"
+#include "../Shadows/Includes/ShadowSkin.hlsl"
 
 PS_OUTPUT main(VS_OUTPUT IN) {
     PS_OUTPUT OUT;
@@ -72,7 +77,14 @@ PS_OUTPUT main(VS_OUTPUT IN) {
     r2.w = r0.w * pow(abs(shades(q18.xyz, normalize(IN.texcoord_3.xyz))), Toggles.z);
     r0.xyzw = tex2D(BaseMap, IN.BaseUV.xy);
     q5.x = dot(q18.xyz, IN.texcoord_1.xyz);
-    q2.xyz = GetLightAmount(IN.texcoord_6, IN.texcoord_7, IN.texcoord_8);
+
+    if (IN.LCOLOR_2.x < -10.0f) {
+        q2.xyz = GetLightAmountSkin(IN.texcoord_9, IN.texcoord_6, IN.texcoord_8);
+    }
+    else {
+        q2.xyz = GetLightAmount(IN.texcoord_6, IN.texcoord_7, IN.texcoord_8);
+    }
+
     q9.xyz = saturate((0.2 >= q5.x ? (r2.w * max(q5.x + 0.5, 0)) : r2.w) * PSLightColor[0].rgb) * q2.xyz;
     r0.xyz = (Toggles.x <= 0.0 ? r0.xyz : (r0.xyz * IN.LCOLOR_0.xyz));
     q4.xyz = (r0.xyz * max((q2.xyz * (saturate(q5.x) * PSLightColor[0].rgb)) + AmbientColor.rgb, 0)) + q9.xyz;

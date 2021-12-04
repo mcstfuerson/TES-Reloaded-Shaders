@@ -9,7 +9,8 @@
 float4 AmbientColor : register(c1);
 float4 PSLightColor[4] : register(c2);
 float4 Toggles : register(c7);
-float4 TESR_ShadowData : register(c8);
+float4 TESR_ShadowData : register(c5);
+float4 TESR_ShadowSkinData : register(c8);
 float4 TESR_ShadowLightPosition[12] : register(c9);
 
 sampler2D BaseMap : register(s0);
@@ -18,6 +19,7 @@ sampler2D ShadowMap : register(s6);
 sampler2D ShadowMaskMap : register(s7);
 sampler2D TESR_ShadowMapBufferNear : register(s8) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
 sampler2D TESR_ShadowMapBufferFar : register(s9) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
+sampler2D TESR_ShadowMapBufferSkin : register(s10) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
 
 // Registers:
 //
@@ -41,8 +43,10 @@ struct VS_OUTPUT {
 	float4 texcoord_6 : TEXCOORD6;
     float4 texcoord_7 : TEXCOORD7;
     float4 texcoord_8 : TEXCOORD8;
+    float4 texcoord_9 : TEXCOORD9;
     float3 LCOLOR_0 : COLOR0;
     float4 LCOLOR_1 : COLOR1;
+    float4 LCOLOR_2 : COLOR2;
 };
 
 struct PS_OUTPUT {
@@ -50,6 +54,7 @@ struct PS_OUTPUT {
 };
 
 #include "../Shadows/Includes/Shadow.hlsl"
+#include "../Shadows/Includes/ShadowSkin.hlsl"
 
 PS_OUTPUT main(VS_OUTPUT IN) {
     PS_OUTPUT OUT;
@@ -65,11 +70,21 @@ PS_OUTPUT main(VS_OUTPUT IN) {
     float3 q5;
     float4 r0;
     float3 r3;
+    float2 r4 = 0;
+    float4 r5;
 
     r0.xyzw = tex2D(NormalMap, IN.BaseUV.xy);
+    r5 = tex2D(BaseMap, r4.xy);
     r3.xyz = shades(normalize(expand(r0.xyz)), IN.texcoord_1.xyz) * PSLightColor[0].rgb;
     r0.xyzw = tex2D(BaseMap, IN.BaseUV.xy);
-    q2.xyz = max((GetLightAmount(IN.texcoord_6, IN.texcoord_7, IN.texcoord_8) * r3.xyz) + AmbientColor.rgb, 0);
+
+    if (IN.LCOLOR_2.x < -10.0f || (r5.r < .1 && r5.g > .9 && r5.b < .1)) {
+        q2.xyz = max((GetLightAmountSkin(IN.texcoord_9, IN.texcoord_6, IN.texcoord_8) * r3.xyz) + AmbientColor.rgb, 0);
+    }
+    else {
+        q2.xyz = max((GetLightAmount(IN.texcoord_6, IN.texcoord_7, IN.texcoord_8) * r3.xyz) + AmbientColor.rgb, 0);
+    }
+
     q3.xyz = (Toggles.x <= 0.0 ? r0.xyz : (r0.xyz * IN.LCOLOR_0.xyz));
     q4.xyz = q2.xyz * q3.xyz;
     q5.xyz = (Toggles.y <= 0.0 ? q4.xyz : ((IN.LCOLOR_1.w * (IN.LCOLOR_1.xyz - (q3.xyz * q2.xyz))) + q4.xyz));

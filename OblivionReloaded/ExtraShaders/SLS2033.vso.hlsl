@@ -52,6 +52,7 @@ struct VS_OUTPUT {
     float4 texcoord_6 : TEXCOORD6;
 	float4 texcoord_7 : TEXCOORD7;
     float4 texcoord_8 : TEXCOORD8;
+    float4 color_2 : COLOR2;
 };
 
 // Code:
@@ -73,6 +74,8 @@ VS_OUTPUT main(VS_INPUT IN) {
     OUT.texcoord_6 = mul(r0, TESR_ShadowCameraToLightTransform[0]);
 	OUT.texcoord_7 = mul(r0, TESR_ShadowCameraToLightTransform[1]);
     OUT.texcoord_8 = mul(r0, TESR_InvViewProjectionTransform);
+    OUT.color_2 = -1000.0f;
+
     return OUT;
 };
 

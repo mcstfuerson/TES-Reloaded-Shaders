@@ -14,6 +14,7 @@ float4 ShadowProjData : register(c32);
 float4 ShadowProjTransform : register(c33);
 row_major float4x4 SkinModelViewProj : register(c1);
 row_major float4x4 TESR_ShadowCameraToLightTransform[2] : register(c34);
+row_major float4x4 TESR_ShadowCameraToLightTransformSkin : register(c120);
 row_major float4x4 TESR_InvViewProjectionTransform : register(c97);
 // Registers:
 //
@@ -57,6 +58,7 @@ struct VS_OUTPUT {
     float4 texcoord_6 : TEXCOORD6;
 	float4 texcoord_7 : TEXCOORD7;
     float4 texcoord_8 : TEXCOORD8;
+    float4 texcoord_9 : TEXCOORD9;
 };
 
 // Code:
@@ -155,6 +157,7 @@ VS_OUTPUT main(VS_INPUT IN) {
     OUT.texcoord_3.xyz = mul(float3x3(r4.xyz, r3.xyz, q5.xyz), eye6.xyz);
     OUT.texcoord_6 = mul(r5, TESR_ShadowCameraToLightTransform[0]);
 	OUT.texcoord_7 = mul(r5, TESR_ShadowCameraToLightTransform[1]);
+    OUT.texcoord_9 = mul(r5, TESR_ShadowCameraToLightTransformSkin);
     OUT.texcoord_8 = mul(r5, TESR_InvViewProjectionTransform);
 
     return OUT;
