@@ -23,6 +23,7 @@ float4 TESR_ShadowCubeMapBlend;
 float4 TESR_ShadowCubeMapBlend2;
 float4 TESR_ShadowCubeMapBlend3;
 float4 TESR_SunAmount;
+float4 TESR_ShadowBiasDeferred;
 
 sampler2D TESR_RenderedBuffer : register(s0) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
 sampler2D TESR_DepthBuffer : register(s1) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
@@ -110,6 +111,12 @@ float LookupLightAmount(samplerCUBE buffer, float4 WorldPos, float4 LightPos, fl
 		}
 	}
 	Shadow /= 36.0f;
+
+	//clamp torch shadow to 0.5f
+	if ((LightPos.w - 256.0f) == 1.0f) {
+		Shadow = max(0.5f, Shadow);
+	}
+
 	return Shadow;
 
 }
