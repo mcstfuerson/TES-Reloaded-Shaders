@@ -78,7 +78,7 @@ PS_OUTPUT main(VS_OUTPUT IN) {
     r3.xyz = shades(normalize(expand(r0.xyz)), IN.texcoord_1.xyz) * PSLightColor[0].rgb;
     r0.xyzw = tex2D(BaseMap, IN.BaseUV.xy);
 
-    if (IN.LCOLOR_2.x < -10.0f || (r5.r < .1 && r5.g > .9 && r5.b < .1)) {
+    if (IN.LCOLOR_2.x < -10.0f || (r5.r > .9 && r5.g > .9 && r5.b < .1)) {
         q2.xyz = max((GetLightAmountSkin(IN.texcoord_9, IN.texcoord_6, IN.texcoord_8) * r3.xyz) + AmbientColor.rgb, 0);
     }
     else {
