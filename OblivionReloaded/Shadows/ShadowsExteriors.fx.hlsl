@@ -15,6 +15,30 @@ float4 TESR_ShadowLightPosition2;
 float4 TESR_ShadowLightPosition3;
 float4 TESR_ShadowLightPosition4;
 float4 TESR_ShadowLightPosition5;
+float4 TESR_ShadowLightPosition6;
+float4 TESR_ShadowLightPosition7;
+float4 TESR_ShadowLightPosition8;
+float4 TESR_ShadowLightPosition9;
+float4 TESR_ShadowLightPosition10;
+float4 TESR_ShadowLightPosition11;
+float4 TESR_ShadowCullLightPosition0;
+float4 TESR_ShadowCullLightPosition1;
+float4 TESR_ShadowCullLightPosition2;
+float4 TESR_ShadowCullLightPosition3;
+float4 TESR_ShadowCullLightPosition4;
+float4 TESR_ShadowCullLightPosition5;
+float4 TESR_ShadowCullLightPosition6;
+float4 TESR_ShadowCullLightPosition7;
+float4 TESR_ShadowCullLightPosition8;
+float4 TESR_ShadowCullLightPosition9;
+float4 TESR_ShadowCullLightPosition10;
+float4 TESR_ShadowCullLightPosition11;
+float4 TESR_ShadowCullLightPosition12;
+float4 TESR_ShadowCullLightPosition13;
+float4 TESR_ShadowCullLightPosition14;
+float4 TESR_ShadowCullLightPosition15;
+float4 TESR_ShadowCullLightPosition16;
+float4 TESR_ShadowCullLightPosition17;
 float4 TESR_SunAmount;
 float4 TESR_ShadowLightDir;
 float4 TESR_ReciprocalResolution;
@@ -127,15 +151,13 @@ float Lookup(float4 ShadowPos, float2 OffSet, float bias) {
 	return clamp(TESR_ShadowLightDir.w, TESR_ShadowData.y, 1.0f);
 }
 
-float AddProximityLight(float4 WorldPos, float4 ExternalLightPos, float Shadow) {
+float AddProximityLight(float4 WorldPos, float4 ExternalLightPos) {
 
 	if (ExternalLightPos.w) {
 		float distToExternalLight = distance(WorldPos.xyz, ExternalLightPos.xyz);
-		if (distToExternalLight < ExternalLightPos.w) {
-			Shadow += (saturate(1.000f - (distToExternalLight / (ExternalLightPos.w))));
-		}
+		return (saturate(1.000f - (distToExternalLight / (ExternalLightPos.w))));
 	}
-	return Shadow;
+	return 0.0f;
 }
 
 
@@ -144,6 +166,7 @@ float GetLightAmount(float4 WorldPos, float4 ShadowPos, float4 ShadowPosFar, flo
 	float Shadow = 0.0f;
 	float x;
 	float y;
+	float distToExternalLight;
 
 	ShadowPos.xyz /= ShadowPos.w;
 	if (ShadowPos.x < -1.0f || ShadowPos.x > 1.0f ||
@@ -161,12 +184,36 @@ float GetLightAmount(float4 WorldPos, float4 ShadowPos, float4 ShadowPosFar, flo
 	}
 	Shadow /= 36.0f;
 
-	Shadow = AddProximityLight(WorldPos, TESR_ShadowLightPosition0, Shadow);
-	Shadow = AddProximityLight(WorldPos, TESR_ShadowLightPosition1, Shadow);
-	Shadow = AddProximityLight(WorldPos, TESR_ShadowLightPosition2, Shadow);
-	Shadow = AddProximityLight(WorldPos, TESR_ShadowLightPosition3, Shadow);
-	Shadow = AddProximityLight(WorldPos, TESR_ShadowLightPosition4, Shadow);
-	Shadow = AddProximityLight(WorldPos, TESR_ShadowLightPosition5, Shadow);
+	Shadow += AddProximityLight(WorldPos, TESR_ShadowLightPosition0);
+	Shadow += AddProximityLight(WorldPos, TESR_ShadowLightPosition1);
+	Shadow += AddProximityLight(WorldPos, TESR_ShadowLightPosition2);
+	Shadow += AddProximityLight(WorldPos, TESR_ShadowLightPosition3);
+	Shadow += AddProximityLight(WorldPos, TESR_ShadowLightPosition4);
+	Shadow += AddProximityLight(WorldPos, TESR_ShadowLightPosition5);
+	Shadow += AddProximityLight(WorldPos, TESR_ShadowLightPosition6);
+	Shadow += AddProximityLight(WorldPos, TESR_ShadowLightPosition7);
+	Shadow += AddProximityLight(WorldPos, TESR_ShadowLightPosition8);
+	Shadow += AddProximityLight(WorldPos, TESR_ShadowLightPosition9);
+	Shadow += AddProximityLight(WorldPos, TESR_ShadowLightPosition10);
+	Shadow += AddProximityLight(WorldPos, TESR_ShadowLightPosition11);
+	Shadow += AddProximityLight(WorldPos, TESR_ShadowCullLightPosition0);
+	Shadow += AddProximityLight(WorldPos, TESR_ShadowCullLightPosition1);
+	Shadow += AddProximityLight(WorldPos, TESR_ShadowCullLightPosition2);
+	Shadow += AddProximityLight(WorldPos, TESR_ShadowCullLightPosition3);
+	Shadow += AddProximityLight(WorldPos, TESR_ShadowCullLightPosition4);
+	Shadow += AddProximityLight(WorldPos, TESR_ShadowCullLightPosition5);
+	Shadow += AddProximityLight(WorldPos, TESR_ShadowCullLightPosition6);
+	Shadow += AddProximityLight(WorldPos, TESR_ShadowCullLightPosition7);
+	Shadow += AddProximityLight(WorldPos, TESR_ShadowCullLightPosition8);
+	Shadow += AddProximityLight(WorldPos, TESR_ShadowCullLightPosition9);
+	Shadow += AddProximityLight(WorldPos, TESR_ShadowCullLightPosition10);
+	Shadow += AddProximityLight(WorldPos, TESR_ShadowCullLightPosition11);
+	Shadow += AddProximityLight(WorldPos, TESR_ShadowCullLightPosition12);
+	Shadow += AddProximityLight(WorldPos, TESR_ShadowCullLightPosition13);
+	Shadow += AddProximityLight(WorldPos, TESR_ShadowCullLightPosition14);
+	Shadow += AddProximityLight(WorldPos, TESR_ShadowCullLightPosition15);
+	Shadow += AddProximityLight(WorldPos, TESR_ShadowCullLightPosition16);
+	Shadow += AddProximityLight(WorldPos, TESR_ShadowCullLightPosition17);
 	return saturate(Shadow);
 
 }
@@ -183,7 +230,7 @@ float4 Shadow(VSOUT IN) : COLOR0{
 	float3 camera_vector = toWorld(IN.UVCoord) * depth;
 	float4 world_pos = float4(TESR_CameraPosition.xyz + camera_vector, 1.0f);
 
-	if (world_pos.z > 0.0f) {
+	if (world_pos.z > 1.0f) {
 		float4 pos = mul(world_pos, TESR_WorldViewProjectionTransform);
 		float4 farPos = pos;
 		float4 world_pos_trans = mul(world_pos, TESR_WorldTransform);

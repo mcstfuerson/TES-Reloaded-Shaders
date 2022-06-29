@@ -1,8 +1,7 @@
 float4 TESR_SunAmount : register(c223);
+float4 TESR_ShadowCullLightPosition[18] : register(c203);
 
 static const float BIAS = 0.001f;
-static const float farMaxInc = 0.2f;
-static const float nearMaxInc = 1.0f;
 
 float Lookup(samplerCUBE buffer, float3 LightDir, float Distance, float Blend, float2 OffSet) {
 	float Shadow = texCUBE(buffer, LightDir + float3(OffSet.x * TESR_ShadowCubeData.z, OffSet.y * TESR_ShadowCubeData.z, 0.0f)).r;
@@ -26,19 +25,12 @@ float LookupLightAmount(samplerCUBE buffer, float4 WorldPos, float4 LightPos, fl
 
 	Blend = max(1.0f - Blend, saturate(Distance) * TESR_ShadowCubeData.y);
 
-	for (y = -2.5f; y <= 2.5f; y += 1.0f) {
-		for (x = -2.5f; x <= 2.5f; x += 1.0f) {
+	for (y = -1.5f; y <= 1.5f; y += 1.5f) {
+		for (x = -1.5f; x <= 1.5f; x += 1.5f) {
 			Shadow += Lookup(buffer, LightDir, Distance, Blend, float2(x, y));
 		}
 	}
-	Shadow /= 36.0f;
-
-	/*for (y = -0.5f; y <= 0.5f; y += 0.5f) {
-		for (x = -0.5f; x <= 0.5f; x += 0.5f) {
-			Shadow += Lookup(buffer, LightDir, Distance, Blend, float2(x, y));
-		}
-	}
-	Shadow /= 9.0f;*/
+	Shadow /= 9.0f;
 
 	return Shadow;
 
@@ -48,6 +40,18 @@ float GetLightAmount(float4 pos) {
 
 	float blend[12];
 	float shadows[12];
+	shadows[0] = 1.0f;
+	shadows[1] = 1.0f;
+	shadows[2] = 1.0f;
+	shadows[3] = 1.0f;
+	shadows[4] = 1.0f;
+	shadows[5] = 1.0f;
+	shadows[6] = 1.0f;
+	shadows[7] = 1.0f;
+	shadows[8] = 1.0f;
+	shadows[9] = 1.0f;
+	shadows[10] = 1.0f;
+	shadows[11] = 1.0f;
 	blend[0] = TESR_ShadowCubeMapBlend.x;
 	blend[1] = TESR_ShadowCubeMapBlend.y;
 	blend[2] = TESR_ShadowCubeMapBlend.z;
@@ -88,9 +92,14 @@ float GetLightAmount(float4 pos) {
 
 		if (TESR_ShadowLightPosition[i].w) {
 			tShadowMax = shadows[i];
+
 			for (int j = 0; j < 12; j++) {
 				scaleMod = TESR_ShadowLightPosition[j].w * 0.5f;
 				tShadow = shadows[i];
+
+				if (tShadow >= 1.0f) {
+					break;
+				}
 
 				if (i == j) {
 					continue;
@@ -99,36 +108,26 @@ float GetLightAmount(float4 pos) {
 				if (TESR_ShadowLightPosition[j].w) {
 					distToProximityLight = distance(pos.xyz, TESR_ShadowLightPosition[j].xyz);
 					if (distToProximityLight < TESR_ShadowLightPosition[j].w && shadows[j]>shadows[i]) {
-						if (TESR_ShadowLightPosition[j].w > TESR_ShadowLightPosition[i].w) {
-							farCutOffDist = TESR_ShadowLightPosition[j].w * (0.5f + ((TESR_ShadowLightPosition[j].w / TESR_ShadowLightPosition[i].w) * 0.12f));
-						}
-						else {
-							farCutOffDist = TESR_ShadowLightPosition[j].w * 0.5f;
-						}
-						farClamp = tShadow + farMaxInc;
-						farScaler = (farMaxInc * 2) / (scaleMod);
-						if (distToProximityLight > farCutOffDist) {
-							tShadow += (scaleMod - (distToProximityLight - scaleMod)) * farScaler;
-							tShadow = clamp(tShadow, 0.0f, farClamp);
-						}
-						else {
-							nearClamp = farClamp + nearMaxInc;
-							nearScaler = (nearMaxInc * 2.0) / farCutOffDist;
-							tShadow = farClamp;
-							tShadow += (farCutOffDist - distToProximityLight) * nearScaler;
-							tShadow = clamp(tShadow, 0.0f, nearClamp);
-						}
+						tShadow += (1.000f - (distToProximityLight / (TESR_ShadowLightPosition[j].w)));
 					}
 				}
 
-				if (tShadow > tShadowMax) {
-					tShadowMax = tShadow;
-				}
+				tShadowMax = max(tShadow, tShadowMax);
+
 			}
 			tShadowMax = saturate(tShadowMax);
 			fShadow *= tShadowMax;
 		}
 	}
 
-	return fShadow;
+	for (int j = 0; j < 18; j++) {
+		if (TESR_ShadowCullLightPosition[j].w) {
+			distToProximityLight = distance(pos.xyz, TESR_ShadowCullLightPosition[j].xyz);
+			if (distToProximityLight < TESR_ShadowCullLightPosition[j].w) {
+				fShadow += saturate(1.000f - (distToProximityLight / (TESR_ShadowCullLightPosition[j].w)));
+			}
+		}
+	}
+
+	return saturate(fShadow);
 }

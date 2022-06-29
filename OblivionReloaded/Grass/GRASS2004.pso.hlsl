@@ -14,6 +14,7 @@ sampler2D ShadowMap : register(s1);
 sampler2D ShadowMaskMap : register(s2);
 sampler2D TESR_ShadowMapBufferNear : register(s4) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
 sampler2D TESR_ShadowMapBufferFar : register(s5) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
+row_major float4x4 TESR_InvViewProjectionTransform : register(c20);
 
 //
 //
@@ -35,6 +36,7 @@ struct VS_OUTPUT {
     float3 texcoord_4 : TEXCOORD4_centroid;
     float4 texcoord_5 : TEXCOORD5_centroid;
     float4 texcoord_6 : TEXCOORD6;
+    float4 texcoord_7 : TEXCOORD7;
     float4 texcoord_8 : TEXCOORD8;
     float4 color_0 : COLOR0;
 };
@@ -52,7 +54,7 @@ PS_OUTPUT main(VS_OUTPUT IN) {
     float4 ColorDiffuse;
 
     ColorDiffuse = tex2D(DiffuseMap, IN.DiffuseUV.xy);
-    Color.rgb = (GetLightAmountGrass(IN.texcoord_6, IN.texcoord_8) * IN.texcoord_5.xyz) + IN.texcoord_4.xyz;
+    Color.rgb = (GetLightAmountGrass(IN.texcoord_6, IN.texcoord_7, mul(IN.texcoord_8, TESR_InvViewProjectionTransform)) * IN.texcoord_5.xyz) + IN.texcoord_4.xyz;
     OUT.color_0.a = (AlphaTestRef.x >= ColorDiffuse.a ? 0 : IN.texcoord_5.w);
     OUT.color_0.rgb = (ColorDiffuse.rgb * Color.rgb) + ((IN.color_0.rgb - (ColorDiffuse.rgb * Color.rgb)) * IN.color_0.a);
 

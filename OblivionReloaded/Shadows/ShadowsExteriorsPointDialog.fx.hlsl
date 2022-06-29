@@ -9,15 +9,6 @@ float4 TESR_ShadowCubeData;
 float4 TESR_ShadowLightPosition0;
 float4 TESR_ShadowLightPosition1;
 float4 TESR_ShadowLightPosition2;
-float4 TESR_ShadowLightPosition3;
-float4 TESR_ShadowLightPosition4;
-float4 TESR_ShadowLightPosition5;
-float4 TESR_ShadowLightPosition6;
-float4 TESR_ShadowLightPosition7;
-float4 TESR_ShadowLightPosition8;
-float4 TESR_ShadowLightPosition9;
-float4 TESR_ShadowLightPosition10;
-float4 TESR_ShadowLightPosition11;
 float4 TESR_ShadowCubeMapFarPlanes;
 float4 TESR_ShadowCubeMapBlend;
 float4 TESR_ShadowCubeMapBlend2;
@@ -31,15 +22,6 @@ sampler2D TESR_DepthBuffer : register(s1) = sampler_state { ADDRESSU = CLAMP; AD
 samplerCUBE TESR_ShadowCubeMapBuffer0 : register(s2) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; ADDRESSW = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
 samplerCUBE TESR_ShadowCubeMapBuffer1 : register(s3) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; ADDRESSW = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
 samplerCUBE TESR_ShadowCubeMapBuffer2 : register(s4) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; ADDRESSW = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
-samplerCUBE TESR_ShadowCubeMapBuffer3 : register(s5) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; ADDRESSW = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
-samplerCUBE TESR_ShadowCubeMapBuffer4 : register(s6) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; ADDRESSW = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
-samplerCUBE TESR_ShadowCubeMapBuffer5 : register(s7) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; ADDRESSW = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
-samplerCUBE TESR_ShadowCubeMapBuffer6 : register(s8) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; ADDRESSW = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
-samplerCUBE TESR_ShadowCubeMapBuffer7 : register(s9) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; ADDRESSW = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
-samplerCUBE TESR_ShadowCubeMapBuffer8 : register(s10) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; ADDRESSW = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
-samplerCUBE TESR_ShadowCubeMapBuffer9 : register(s11) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; ADDRESSW = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
-samplerCUBE TESR_ShadowCubeMapBuffer10 : register(s12) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; ADDRESSW = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
-samplerCUBE TESR_ShadowCubeMapBuffer11 : register(s13) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; ADDRESSW = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
 
 static const float nearZ = TESR_ProjectionTransform._43 / TESR_ProjectionTransform._33;
 static const float farZ = (TESR_ProjectionTransform._33 * nearZ) / (TESR_ProjectionTransform._33 - 1.0f);
@@ -105,15 +87,16 @@ float LookupLightAmount(samplerCUBE buffer, float4 WorldPos, float4 LightPos, fl
 	Distance = Distance / LightPos.w;
 
 	Blend = max(1.0f - Blend, saturate(Distance) * TESR_ShadowCubeData.y);
-	
-	for (y = -1.5f; y <= 1.5f; y += 1.5f) {
-		for (x = -1.5f; x <= 1.5f; x += 1.5f) {
+
+	for (y = -5.5f; y <= 5.5f; y += 2.0f) {
+		for (x = -5.5f; x <= 5.5f; x += 2.0f) {
 			Shadow += Lookup(buffer, LightDir, Distance, Blend, float2(x, y));
 		}
 	}
-	Shadow /= 9.0f;
+	Shadow /= 36.0f;
 
 	return max(0.5f, Shadow);
+
 }
 
 float4 Shadow(VSOUT IN) : COLOR0{
@@ -129,57 +112,21 @@ float4 Shadow(VSOUT IN) : COLOR0{
 	float4 world_pos = float4(TESR_CameraPosition.xyz + camera_vector, 1.0f);
 	float4 pos = mul(world_pos, TESR_WorldTransform);
 
-	float blend[12];
-	float shadows[12];
+	float blend[3];
+	float shadows[3];
 	shadows[0] = 1.0f;
 	shadows[1] = 1.0f;
 	shadows[2] = 1.0f;
-	shadows[3] = 1.0f;
-	shadows[4] = 1.0f;
-	shadows[5] = 1.0f;
-	shadows[6] = 1.0f;
-	shadows[7] = 1.0f;
-	shadows[8] = 1.0f;
-	shadows[9] = 1.0f;
-	shadows[10] = 1.0f;
-	shadows[11] = 1.0f;
-	float4 lightPos[12];
+	float4 lightPos[3];
 	lightPos[0] = TESR_ShadowLightPosition0;
 	lightPos[1] = TESR_ShadowLightPosition1;
 	lightPos[2] = TESR_ShadowLightPosition2;
-	lightPos[3] = TESR_ShadowLightPosition3;
-	lightPos[4] = TESR_ShadowLightPosition4;
-	lightPos[5] = TESR_ShadowLightPosition5;
-	lightPos[6] = TESR_ShadowLightPosition6;
-	lightPos[7] = TESR_ShadowLightPosition7;
-	lightPos[8] = TESR_ShadowLightPosition8;
-	lightPos[9] = TESR_ShadowLightPosition9;
-	lightPos[10] = TESR_ShadowLightPosition10;
-	lightPos[11] = TESR_ShadowLightPosition11;
 	blend[0] = TESR_ShadowCubeMapBlend.x;
 	blend[1] = TESR_ShadowCubeMapBlend.y;
 	blend[2] = TESR_ShadowCubeMapBlend.z;
-	blend[3] = TESR_ShadowCubeMapBlend.w;
-	blend[4] = TESR_ShadowCubeMapBlend2.x;
-	blend[5] = TESR_ShadowCubeMapBlend2.y;
-	blend[6] = TESR_ShadowCubeMapBlend2.z;
-	blend[7] = TESR_ShadowCubeMapBlend2.w;
-	blend[8] = TESR_ShadowCubeMapBlend3.x;
-	blend[9] = TESR_ShadowCubeMapBlend3.y;
-	blend[10] = TESR_ShadowCubeMapBlend3.z;
-	blend[11] = TESR_ShadowCubeMapBlend3.w;
 	if (lightPos[0].w) shadows[0] = LookupLightAmount(TESR_ShadowCubeMapBuffer0, pos, lightPos[0], blend[0]);
 	if (lightPos[1].w) shadows[1] = LookupLightAmount(TESR_ShadowCubeMapBuffer1, pos, lightPos[1], blend[1]);
 	if (lightPos[2].w) shadows[2] = LookupLightAmount(TESR_ShadowCubeMapBuffer2, pos, lightPos[2], blend[2]);
-	if (lightPos[3].w) shadows[3] = LookupLightAmount(TESR_ShadowCubeMapBuffer3, pos, lightPos[3], blend[3]);
-	if (lightPos[4].w) shadows[4] = LookupLightAmount(TESR_ShadowCubeMapBuffer4, pos, lightPos[4], blend[4]);
-	if (lightPos[5].w) shadows[5] = LookupLightAmount(TESR_ShadowCubeMapBuffer5, pos, lightPos[5], blend[5]);
-	if (lightPos[6].w) shadows[6] = LookupLightAmount(TESR_ShadowCubeMapBuffer6, pos, lightPos[6], blend[6]);
-	if (lightPos[7].w) shadows[7] = LookupLightAmount(TESR_ShadowCubeMapBuffer7, pos, lightPos[7], blend[7]);
-	if (lightPos[8].w) shadows[8] = LookupLightAmount(TESR_ShadowCubeMapBuffer8, pos, lightPos[8], blend[8]);
-	if (lightPos[9].w) shadows[9] = LookupLightAmount(TESR_ShadowCubeMapBuffer9, pos, lightPos[9], blend[9]);
-	if (lightPos[10].w) shadows[10] = LookupLightAmount(TESR_ShadowCubeMapBuffer10, pos, lightPos[10], blend[10]);
-	if (lightPos[11].w) shadows[11] = LookupLightAmount(TESR_ShadowCubeMapBuffer11, pos, lightPos[11], blend[11]);
 
 	float fShadow = 1;
 	float tShadow = 1;
@@ -191,11 +138,11 @@ float4 Shadow(VSOUT IN) : COLOR0{
 	float nearClamp;
 	float nearScaler;
 
-	for (int i = 0; i < 12; i++) {
+	for (int i = 0; i < 3; i++) {
 
 		if (lightPos[i].w) {
 			tShadowMax = shadows[i];
-			for (int j = 0; j < 12; j++) {
+			for (int j = 0; j < 3; j++) {
 
 				tShadow = shadows[i];
 

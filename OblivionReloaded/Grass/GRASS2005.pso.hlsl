@@ -16,6 +16,7 @@ float4 TESR_ShadowData : register(c5);
 float4 TESR_ShadowLightPosition[12] : register(c6);
 sampler2D TESR_ShadowMapBufferNear : register(s4) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
 sampler2D TESR_ShadowMapBufferFar : register(s5) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
+row_major float4x4 TESR_InvViewProjectionTransform : register(c20);
 //
 //
 // Registers:
@@ -39,6 +40,7 @@ struct VS_OUTPUT {
     float4 texcoord_5 : TEXCOORD5_centroid;
     float4 texcoord_1 : TEXCOORD1;
     float4 texcoord_6 : TEXCOORD6;
+    float4 texcoord_7 : TEXCOORD7;
     float4 texcoord_8 : TEXCOORD8;
     float4 color_0 : COLOR0;
 };
@@ -63,7 +65,7 @@ PS_OUTPUT main(VS_OUTPUT IN) {
     r0.xyzw = tex2D(DiffuseMap, IN.DiffuseUV.xy);
     att4.x = tex2D(AttMap, IN.texcoord_1.zw);
     att0.x = tex2D(AttMap, IN.texcoord_1.xy);
-    q3.xyz = (GetLightAmountGrass(IN.texcoord_6, IN.texcoord_8) * IN.texcoord_5.xyz) + IN.texcoord_4.xyz;
+    q3.xyz = (GetLightAmountGrass(IN.texcoord_6, IN.texcoord_7, mul(IN.texcoord_8, TESR_InvViewProjectionTransform)) * IN.texcoord_5.xyz) + IN.texcoord_4.xyz;
     q5.xyz = (saturate((1 - att0.x) - att4.x) * (0.4 * PointLightColor.rgb)) + q3.xyz;
     OUT.color_0.a = (AlphaTestRef.x >= r0.w ? 0 : IN.texcoord_5.w);
     OUT.color_0.rgb = (r0.xyz * q5.xyz) + ((IN.color_0.rgb - (r0.xyz * q5.xyz)) * IN.color_0.a);
