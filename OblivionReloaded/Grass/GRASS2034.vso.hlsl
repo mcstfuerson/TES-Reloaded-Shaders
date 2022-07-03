@@ -22,7 +22,8 @@ float4 ShadowProjTransform : register(c13);
 float4 WindData : register(c4);
 float4 TESR_GrassScale : register(c248);
 row_major float4x4 TESR_ShadowCameraToLightTransformNear : register(c249);
-row_major float4x4 TESR_ShadowCameraToLightTransformFar : register(c16);
+float4 TESR_PointLightPosition[2]: register(c16);
+float4 TESR_PointLightColor[2]: register(c18);
 
 //
 //
@@ -65,10 +66,11 @@ struct VS_OUTPUT {
     float4 position : POSITION;
     float2 texcoord_0 : TEXCOORD0;
     float4 texcoord_1 : TEXCOORD1;
+    float4 texcoord_2 : TEXCOORD2;
+    float3 texcoord_3 : TEXCOORD3;
     float4 texcoord_4 : TEXCOORD4;
     float4 texcoord_5 : TEXCOORD5;
     float4 texcoord_6 : TEXCOORD6;
-    float4 texcoord_7 : TEXCOORD7;
     float4 texcoord_8 : TEXCOORD8;
 };
 
@@ -133,10 +135,9 @@ VS_OUTPUT main(VS_INPUT IN) {
     r1.xy = (((sin(fracr((q0.x / 128) + WindData.w)) * WindData.z) * sqr(IN.color_0.a)) * WindData.xy) + r1.xy;
     r1.xyz = r1.xyz + InstanceData[0 + IN.texcoord_1.x];
     OUT.texcoord_1.w = 0.5;
-    OUT.texcoord_1.xyz = compress((LightPosition.xyz - r1.xyz) / LightPosition.w);	// [-1,+1] to [0,1]
+    OUT.texcoord_1.xyz = compress((LightPosition.xyz - r1.xyz) / LightPosition.w);    if (distance(LightPosition.xyz, TESR_PointLightPosition[0].xyz) < 3.5f)   {        OUT.texcoord_2.w = 0.5;        OUT.texcoord_2.xyz = compress((TESR_PointLightPosition[1].xyz - r1.xyz) / TESR_PointLightPosition[1].w);        OUT.texcoord_3.xyz = TESR_PointLightColor[1];    }    else {        OUT.texcoord_2.w = 0.5;            OUT.texcoord_2.xyz = compress((TESR_PointLightPosition[0].xyz - r1.xyz) / TESR_PointLightPosition[0].w);        OUT.texcoord_3.xyz = TESR_PointLightColor[0];    }	// [-1,+1] to [0,1]
     r0 = mul(ModelViewProj, r1);
     OUT.texcoord_6 = mul(r0, TESR_ShadowCameraToLightTransformNear);
-    OUT.texcoord_7 = mul(r0, TESR_ShadowCameraToLightTransformFar);
     OUT.texcoord_8 = r0;
     OUT.color_0.a = 1 - saturate((FogParam.x - length(r0.xyz)) / FogParam.y);
     OUT.position.xyzw = r0.xyzw;
