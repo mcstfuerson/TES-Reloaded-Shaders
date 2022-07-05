@@ -16,13 +16,13 @@ float LookupFar(float4 ShadowPos, float2 OffSet) {
 
 float LookupLeaves(float4 ShadowPos, float2 OffSet) {
 	float Shadow = tex2D(TESR_ShadowMapBufferNear, ShadowPos.xy + float2(OffSet.x * TESR_ShadowData.z, OffSet.y * TESR_ShadowData.z)).r;
-	if (Shadow < ShadowPos.z - TESR_ShadowBiasForward.z) return 0.75f;
+	if (Shadow < ShadowPos.z - TESR_ShadowBiasForward.z) return min(TESR_ShadowLightDir.w,0.75f);
 	return TESR_ShadowLightDir.w;
 }
 
 float LookupFarLeaves(float4 ShadowPos, float2 OffSet) {
 	float Shadow = tex2D(TESR_ShadowMapBufferFar, ShadowPos.xy + float2(OffSet.x * TESR_ShadowData.w, OffSet.y * TESR_ShadowData.w)).r;
-	if (Shadow < ShadowPos.z - TESR_ShadowBiasForward.w) return 0.75f;
+	if (Shadow < ShadowPos.z - TESR_ShadowBiasForward.w) return min(TESR_ShadowLightDir.w, 0.75f);
 	return TESR_ShadowLightDir.w;
 }
 
