@@ -43,6 +43,7 @@ float4 TESR_SunAmount;
 float4 TESR_ShadowLightDir;
 float4 TESR_ReciprocalResolution;
 float4 TESR_ShadowBiasDeferred;
+float4 TESR_FogData;
 
 sampler2D TESR_RenderedBuffer : register(s0) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
 sampler2D TESR_DepthBuffer : register(s1) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
@@ -54,6 +55,7 @@ static const float nearZ = TESR_ProjectionTransform._43 / TESR_ProjectionTransfo
 static const float farZ = (TESR_ProjectionTransform._33 * nearZ) / (TESR_ProjectionTransform._33 - 1.0f);
 static const float Zmul = nearZ * farZ;
 static const float Zdiff = farZ - nearZ;
+static const float darkness = 0.8f;
 
 struct VSOUT
 {
@@ -117,8 +119,8 @@ float4 getNormals(float2 UVCoord)
 
 float LookupFar(float4 ShadowPos, float2 OffSet) {
 	float Shadow = tex2D(TESR_ShadowMapBufferFar, ShadowPos.xy + float2(OffSet.x * TESR_ShadowData.w, OffSet.y * TESR_ShadowData.w)).r;
-	if (Shadow < ShadowPos.z - TESR_ShadowBiasDeferred.w) return TESR_ShadowData.y;
-	return clamp(TESR_ShadowLightDir.w, TESR_ShadowData.y, 1.0f);
+	if (Shadow < ShadowPos.z - TESR_ShadowBiasDeferred.w) return darkness;
+	return clamp(TESR_ShadowLightDir.w, darkness, 1.0f);
 }
 
 float GetLightAmountFar(float4 ShadowPos) {
@@ -147,8 +149,8 @@ float GetLightAmountFar(float4 ShadowPos) {
 
 float Lookup(float4 ShadowPos, float2 OffSet, float bias) {
 	float Shadow = tex2D(TESR_ShadowMapBufferNear, ShadowPos.xy + float2(OffSet.x * TESR_ShadowData.z, OffSet.y * TESR_ShadowData.z)).r;
-	if (Shadow < ShadowPos.z - bias) return TESR_ShadowData.y;
-	return clamp(TESR_ShadowLightDir.w, TESR_ShadowData.y, 1.0f);
+	if (Shadow < ShadowPos.z - bias) return darkness;
+	return clamp(TESR_ShadowLightDir.w, darkness, 1.0f);
 }
 
 float AddProximityLight(float4 WorldPos, float4 ExternalLightPos) {
@@ -231,6 +233,7 @@ float4 Shadow(VSOUT IN) : COLOR0{
 	float4 world_pos = float4(TESR_CameraPosition.xyz + camera_vector, 1.0f);
 
 	if (world_pos.z > 1.0f) {
+		float fogCoeff = (saturate((distance(world_pos, TESR_CameraPosition.xyz) - ((TESR_FogData.y - 2000))) / 1000)) + 1.0f;
 		float4 pos = mul(world_pos, TESR_WorldViewProjectionTransform);
 		float4 farPos = pos;
 		float4 world_pos_trans = mul(world_pos, TESR_WorldTransform);
@@ -247,7 +250,7 @@ float4 Shadow(VSOUT IN) : COLOR0{
 		float4 ShadowNear = mul(pos, TESR_ShadowCameraToLightTransformNear);
 		float4 ShadowFar = mul(farPos, TESR_ShadowCameraToLightTransformFar);
 		float Shadow = GetLightAmount(world_pos_trans, ShadowNear, ShadowFar, bias);
-		color.rgb *= Shadow * float3(1.0f, 1.0f, 1.0f);
+		color.rgb *= saturate(Shadow*fogCoeff) * float3(1.0f, 1.0f, 1.0f);
 	}
 	return float4(color, 1.0f);
 

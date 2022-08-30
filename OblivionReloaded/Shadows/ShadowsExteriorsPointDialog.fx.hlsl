@@ -10,12 +10,9 @@ float4 TESR_ShadowLightPosition0;
 float4 TESR_ShadowLightPosition1;
 float4 TESR_ShadowLightPosition2;
 float4 TESR_ShadowCubeMapFarPlanes;
-float4 TESR_ShadowCubeMapBlend;
-float4 TESR_ShadowCubeMapBlend2;
-float4 TESR_ShadowCubeMapBlend3;
 float4 TESR_SunAmount;
 float4 TESR_ShadowBiasDeferred;
-float4 TESR_ShadowSkinData;
+float4 TESR_FogData;
 
 sampler2D TESR_RenderedBuffer : register(s0) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
 sampler2D TESR_DepthBuffer : register(s1) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
@@ -72,7 +69,7 @@ float Lookup(samplerCUBE buffer, float3 LightDir, float Distance, float Blend, f
 	return 1.0f;
 }
 
-float LookupLightAmount(samplerCUBE buffer, float4 WorldPos, float4 LightPos, float Blend) {
+float LookupLightAmount(samplerCUBE buffer, float4 WorldPos, float4 LightPos) {
 
 	float Shadow = 0.0f;
 	float3 LightDir;
@@ -86,7 +83,7 @@ float LookupLightAmount(samplerCUBE buffer, float4 WorldPos, float4 LightPos, fl
 	LightDir = LightDir / Distance;
 	Distance = Distance / LightPos.w;
 
-	Blend = max(1.0f - Blend, saturate(Distance) * TESR_ShadowCubeData.y);
+	float Blend = saturate(Distance) * TESR_ShadowCubeData.y;
 
 	for (y = -5.5f; y <= 5.5f; y += 2.0f) {
 		for (x = -5.5f; x <= 5.5f; x += 2.0f) {
@@ -111,8 +108,8 @@ float4 Shadow(VSOUT IN) : COLOR0{
 	float3 camera_vector = toWorld(IN.UVCoord) * depth;
 	float4 world_pos = float4(TESR_CameraPosition.xyz + camera_vector, 1.0f);
 	float4 pos = mul(world_pos, TESR_WorldTransform);
+	float fogCoeff = (saturate((distance(world_pos, TESR_CameraPosition.xyz) - ((TESR_FogData.y - 3000))) / 1000)) + 1.0f;
 
-	float blend[3];
 	float shadows[3];
 	shadows[0] = 1.0f;
 	shadows[1] = 1.0f;
@@ -121,12 +118,9 @@ float4 Shadow(VSOUT IN) : COLOR0{
 	lightPos[0] = TESR_ShadowLightPosition0;
 	lightPos[1] = TESR_ShadowLightPosition1;
 	lightPos[2] = TESR_ShadowLightPosition2;
-	blend[0] = TESR_ShadowCubeMapBlend.x;
-	blend[1] = TESR_ShadowCubeMapBlend.y;
-	blend[2] = TESR_ShadowCubeMapBlend.z;
-	if (lightPos[0].w) shadows[0] = LookupLightAmount(TESR_ShadowCubeMapBuffer0, pos, lightPos[0], blend[0]);
-	if (lightPos[1].w) shadows[1] = LookupLightAmount(TESR_ShadowCubeMapBuffer1, pos, lightPos[1], blend[1]);
-	if (lightPos[2].w) shadows[2] = LookupLightAmount(TESR_ShadowCubeMapBuffer2, pos, lightPos[2], blend[2]);
+	if (lightPos[0].w) shadows[0] = LookupLightAmount(TESR_ShadowCubeMapBuffer0, pos, lightPos[0]);
+	if (lightPos[1].w) shadows[1] = LookupLightAmount(TESR_ShadowCubeMapBuffer1, pos, lightPos[1]);
+	if (lightPos[2].w) shadows[2] = LookupLightAmount(TESR_ShadowCubeMapBuffer2, pos, lightPos[2]);
 
 	float fShadow = 1;
 	float tShadow = 1;
@@ -166,7 +160,7 @@ float4 Shadow(VSOUT IN) : COLOR0{
 		}
 	}
 
-	color.rgb *= saturate(fShadow);
+	color.rgb *= saturate(fShadow * fogCoeff);
 	return float4(color, 1.0f);
 
 }
