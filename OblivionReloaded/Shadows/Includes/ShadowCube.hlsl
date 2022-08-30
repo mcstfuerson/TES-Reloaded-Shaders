@@ -9,7 +9,7 @@ float Lookup(samplerCUBE buffer, float3 LightDir, float Distance, float Blend, f
 	return 1.0f;
 }
 
-float LookupLightAmount(samplerCUBE buffer, float4 WorldPos, float4 LightPos, float Blend) {
+float LookupLightAmount(samplerCUBE buffer, float4 WorldPos, float4 LightPos) {
 
 	float Shadow = 0.0f;
 	float3 LightDir;
@@ -23,7 +23,7 @@ float LookupLightAmount(samplerCUBE buffer, float4 WorldPos, float4 LightPos, fl
 	LightDir = LightDir / Distance;
 	Distance = Distance / LightPos.w;
 
-	Blend = max(1.0f - Blend, saturate(Distance) * TESR_ShadowCubeData.y);
+	float Blend = saturate(Distance) * TESR_ShadowCubeData.y;
 
 	for (y = -1.5f; y <= 1.5f; y += 1.5f) {
 		for (x = -1.5f; x <= 1.5f; x += 1.5f) {
@@ -38,7 +38,6 @@ float LookupLightAmount(samplerCUBE buffer, float4 WorldPos, float4 LightPos, fl
 
 float GetLightAmount(float4 pos) {
 
-	float blend[12];
 	float shadows[12];
 	shadows[0] = 1.0f;
 	shadows[1] = 1.0f;
@@ -52,30 +51,18 @@ float GetLightAmount(float4 pos) {
 	shadows[9] = 1.0f;
 	shadows[10] = 1.0f;
 	shadows[11] = 1.0f;
-	blend[0] = TESR_ShadowCubeMapBlend.x;
-	blend[1] = TESR_ShadowCubeMapBlend.y;
-	blend[2] = TESR_ShadowCubeMapBlend.z;
-	blend[3] = TESR_ShadowCubeMapBlend.w;
-	blend[4] = TESR_ShadowCubeMapBlend2.x;
-	blend[5] = TESR_ShadowCubeMapBlend2.y;
-	blend[6] = TESR_ShadowCubeMapBlend2.z;
-	blend[7] = TESR_ShadowCubeMapBlend2.w;
-	blend[8] = TESR_ShadowCubeMapBlend3.x;
-	blend[9] = TESR_ShadowCubeMapBlend3.y;
-	blend[10] = TESR_ShadowCubeMapBlend3.z;
-	blend[11] = TESR_ShadowCubeMapBlend3.w;
-	if (TESR_ShadowLightPosition[0].w) shadows[0] = LookupLightAmount(TESR_ShadowCubeMapBuffer0, pos, TESR_ShadowLightPosition[0], blend[0]);
-	if (TESR_ShadowLightPosition[1].w) shadows[1] = LookupLightAmount(TESR_ShadowCubeMapBuffer1, pos, TESR_ShadowLightPosition[1], blend[1]);
-	if (TESR_ShadowLightPosition[2].w) shadows[2] = LookupLightAmount(TESR_ShadowCubeMapBuffer2, pos, TESR_ShadowLightPosition[2], blend[2]);
-	if (TESR_ShadowLightPosition[3].w) shadows[3] = LookupLightAmount(TESR_ShadowCubeMapBuffer3, pos, TESR_ShadowLightPosition[3], blend[3]);
-	if (TESR_ShadowLightPosition[4].w) shadows[4] = LookupLightAmount(TESR_ShadowCubeMapBuffer4, pos, TESR_ShadowLightPosition[4], blend[4]);
-	if (TESR_ShadowLightPosition[5].w) shadows[5] = LookupLightAmount(TESR_ShadowCubeMapBuffer5, pos, TESR_ShadowLightPosition[5], blend[5]);
-	if (TESR_ShadowLightPosition[6].w) shadows[6] = LookupLightAmount(TESR_ShadowCubeMapBuffer6, pos, TESR_ShadowLightPosition[6], blend[6]);
-	if (TESR_ShadowLightPosition[7].w) shadows[7] = LookupLightAmount(TESR_ShadowCubeMapBuffer7, pos, TESR_ShadowLightPosition[7], blend[7]);
-	if (TESR_ShadowLightPosition[8].w) shadows[8] = LookupLightAmount(TESR_ShadowCubeMapBuffer8, pos, TESR_ShadowLightPosition[8], blend[8]);
-	if (TESR_ShadowLightPosition[9].w) shadows[9] = LookupLightAmount(TESR_ShadowCubeMapBuffer9, pos, TESR_ShadowLightPosition[9], blend[9]);
-	if (TESR_ShadowLightPosition[10].w) shadows[10] = LookupLightAmount(TESR_ShadowCubeMapBuffer10, pos, TESR_ShadowLightPosition[10], blend[10]);
-	if (TESR_ShadowLightPosition[11].w) shadows[11] = LookupLightAmount(TESR_ShadowCubeMapBuffer11, pos, TESR_ShadowLightPosition[11], blend[11]);
+	if (TESR_ShadowLightPosition[0].w) shadows[0] = LookupLightAmount(TESR_ShadowCubeMapBuffer0, pos, TESR_ShadowLightPosition[0]);
+	if (TESR_ShadowLightPosition[1].w) shadows[1] = LookupLightAmount(TESR_ShadowCubeMapBuffer1, pos, TESR_ShadowLightPosition[1]);
+	if (TESR_ShadowLightPosition[2].w) shadows[2] = LookupLightAmount(TESR_ShadowCubeMapBuffer2, pos, TESR_ShadowLightPosition[2]);
+	if (TESR_ShadowLightPosition[3].w) shadows[3] = LookupLightAmount(TESR_ShadowCubeMapBuffer3, pos, TESR_ShadowLightPosition[3]);
+	if (TESR_ShadowLightPosition[4].w) shadows[4] = LookupLightAmount(TESR_ShadowCubeMapBuffer4, pos, TESR_ShadowLightPosition[4]);
+	if (TESR_ShadowLightPosition[5].w) shadows[5] = LookupLightAmount(TESR_ShadowCubeMapBuffer5, pos, TESR_ShadowLightPosition[5]);
+	if (TESR_ShadowLightPosition[6].w) shadows[6] = LookupLightAmount(TESR_ShadowCubeMapBuffer6, pos, TESR_ShadowLightPosition[6]);
+	if (TESR_ShadowLightPosition[7].w) shadows[7] = LookupLightAmount(TESR_ShadowCubeMapBuffer7, pos, TESR_ShadowLightPosition[7]);
+	if (TESR_ShadowLightPosition[8].w) shadows[8] = LookupLightAmount(TESR_ShadowCubeMapBuffer8, pos, TESR_ShadowLightPosition[8]);
+	if (TESR_ShadowLightPosition[9].w) shadows[9] = LookupLightAmount(TESR_ShadowCubeMapBuffer9, pos, TESR_ShadowLightPosition[9]);
+	if (TESR_ShadowLightPosition[10].w) shadows[10] = LookupLightAmount(TESR_ShadowCubeMapBuffer10, pos, TESR_ShadowLightPosition[10]);
+	if (TESR_ShadowLightPosition[11].w) shadows[11] = LookupLightAmount(TESR_ShadowCubeMapBuffer11, pos, TESR_ShadowLightPosition[11]);
 
 	float fShadow = 1;
 	float tShadow = 1;
@@ -86,7 +73,6 @@ float GetLightAmount(float4 pos) {
 	float farScaler;
 	float nearClamp;
 	float nearScaler;
-	float scaleMod;
 
 	for (int i = 0; i < 12; i++) {
 
@@ -94,7 +80,6 @@ float GetLightAmount(float4 pos) {
 			tShadowMax = shadows[i];
 
 			for (int j = 0; j < 12; j++) {
-				scaleMod = TESR_ShadowLightPosition[j].w * 0.5f;
 				tShadow = shadows[i];
 
 				if (tShadow >= 1.0f) {
