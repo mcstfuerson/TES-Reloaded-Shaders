@@ -64,12 +64,7 @@ PS_OUTPUT main(VS_OUTPUT IN) {
     OUT.color_0.a = r0.w;
     OUT.color_0.rgb = r0.xyz;
 
-    //if (r2.r > .9 && (OUT.color_0.b > .25 || OUT.color_0.g > .25)) {
     if ((r2.r > .9 && r2.g < .1 && r2.b < .1) && (r0.b > .1 && r0.g > .1)) {
-        /*OUT.color_0.r = .7;
-        OUT.color_0.g = .5;
-        OUT.color_0.b = .2;*/
-
         OUT.color_0.rgb *= TESR_InteriorDimmer.x;
     }
     else if ((r2.r < .1 && r2.g < .1 && r2.b > .9)) {
@@ -82,7 +77,7 @@ PS_OUTPUT main(VS_OUTPUT IN) {
         //Do nothing
     }
     else {
-        OUT.color_0.rgb *= Shadow;
+        OUT.color_0.rgb *= max(0.5f, Shadow);
     }
     return OUT;
 };
