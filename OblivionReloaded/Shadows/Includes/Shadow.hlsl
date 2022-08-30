@@ -10,19 +10,19 @@ float4 TESR_ShadowCullLightPosition[18] : register(c203);
 
 float LookupFar(float4 ShadowPos, float2 OffSet) {
 	float Shadow = tex2D(TESR_ShadowMapBufferFar, ShadowPos.xy + float2(OffSet.x * TESR_ShadowData.w, OffSet.y * TESR_ShadowData.w)).r;
-	if (Shadow < ShadowPos.z - TESR_ShadowBiasForward.w) return 0.1f;
+	if (Shadow < ShadowPos.z - TESR_ShadowBiasForward.w) return TESR_ShadowData.y;
 	return TESR_ShadowLightDir.w;
 }
 
 float LookupLeaves(float4 ShadowPos, float2 OffSet) {
 	float Shadow = tex2D(TESR_ShadowMapBufferNear, ShadowPos.xy + float2(OffSet.x * TESR_ShadowData.z, OffSet.y * TESR_ShadowData.z)).r;
-	if (Shadow < ShadowPos.z - TESR_ShadowBiasForward.z) return min(TESR_ShadowLightDir.w,0.75f);
+	if (Shadow < ShadowPos.z - TESR_ShadowBiasForward.z) return min(TESR_ShadowLightDir.w, TESR_ShadowData.y + 0.6f);
 	return TESR_ShadowLightDir.w;
 }
 
 float LookupFarLeaves(float4 ShadowPos, float2 OffSet) {
 	float Shadow = tex2D(TESR_ShadowMapBufferFar, ShadowPos.xy + float2(OffSet.x * TESR_ShadowData.w, OffSet.y * TESR_ShadowData.w)).r;
-	if (Shadow < ShadowPos.z - TESR_ShadowBiasForward.w) return min(TESR_ShadowLightDir.w, 0.75f);
+	if (Shadow < ShadowPos.z - TESR_ShadowBiasForward.w) return min(TESR_ShadowLightDir.w, TESR_ShadowData.y + 0.6f);
 	return TESR_ShadowLightDir.w;
 }
 
@@ -76,7 +76,7 @@ float GetLightAmountFarLeaves(float4 ShadowPos) {
 
 float Lookup(float4 ShadowPos, float2 OffSet) {
 	float Shadow = tex2D(TESR_ShadowMapBufferNear, ShadowPos.xy + float2(OffSet.x * TESR_ShadowData.z, OffSet.y * TESR_ShadowData.z)).r;
-	if (Shadow < ShadowPos.z - TESR_ShadowBiasForward.z) return 0.1f;
+	if (Shadow < ShadowPos.z - TESR_ShadowBiasForward.z) return TESR_ShadowData.y;
 	return TESR_ShadowLightDir.w;
 }
 
