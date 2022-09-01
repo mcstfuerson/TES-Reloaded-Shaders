@@ -9,19 +9,19 @@ float4 TESR_ShadowBiasForward : register(c221);
 
 float LookupSkin(float4 ShadowPos, float2 OffSet) {
 	float Shadow = tex2D(TESR_ShadowMapBufferSkin, ShadowPos.xy + float2(OffSet.x * TESR_ShadowSkinData.z, OffSet.y * TESR_ShadowSkinData.z)).r;
-	if (Shadow < ShadowPos.z - 0.00003f) return 0.1f;
+	if (Shadow < ShadowPos.z - 0.00003f) return TESR_ShadowData.y;
 	return TESR_ShadowLightDir.w;
 }
 
 float LookupSkinFar(float4 ShadowPos, float2 OffSet) {
 	float Shadow = tex2D(TESR_ShadowMapBufferNear, ShadowPos.xy + float2(OffSet.x * TESR_ShadowData.z, OffSet.y * TESR_ShadowData.z)).r;
-	if (Shadow < ShadowPos.z - 0.0001f) return 0.1f;
+	if (Shadow < ShadowPos.z - 0.0001f) return TESR_ShadowData.y;
 	return TESR_ShadowLightDir.w;
 }
 
 float LookupEye(float4 ShadowPos, float2 OffSet) {
 	float Shadow = tex2D(TESR_ShadowMapBufferSkin, ShadowPos.xy + float2(OffSet.x * TESR_ShadowSkinData.z, OffSet.y * TESR_ShadowSkinData.z)).r;
-	if (Shadow < ShadowPos.z - 0.00001f) return 0.1f;
+	if (Shadow < ShadowPos.z - 0.00001f) return TESR_ShadowData.y;
 	return TESR_ShadowLightDir.w;
 }
 
