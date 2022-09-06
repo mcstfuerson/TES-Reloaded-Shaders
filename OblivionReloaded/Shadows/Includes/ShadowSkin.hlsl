@@ -75,23 +75,12 @@ float GetLightAmountSkin(float4 ShadowPos, float4 ShadowPosFar, float4 InvPos) {
 	ShadowPos.x = ShadowPos.x * 0.5f + 0.5f;
 	ShadowPos.y = ShadowPos.y * -0.5f + 0.5f;
 
-	if (TESR_ShadowSkinData.x == 0.0f) {
-		for (y = -2.0; y <= 2.0; y += 0.5f) {
-			for (x = -2.0; x <= 2.0; x += 0.5f) {
-				Shadow += LookupSkin(ShadowPos, float2(x, y));
-			}
+	for (y = -2.0; y <= 2.0; y += 0.5f) {
+		for (x = -2.0; x <= 2.0; x += 0.5f) {
+			Shadow += LookupSkin(ShadowPos, float2(x, y));
 		}
-		Shadow /= 81.0f;
 	}
-	else {
-		for (y = -2.0; y <= 2.0; y += 0.25f) {
-			for (x = -2.0; x <= 2.0; x += 0.25f) {
-				Shadow += LookupSkin(ShadowPos, float2(x, y));
-			}
-		}
-		Shadow /= 289.0f;
-	}
-
+	Shadow /= 81.0f;
 
 	for (int j = 0; j < 6; j++) {
 		if (TESR_ShadowLightPosition[j].w) {
@@ -102,5 +91,38 @@ float GetLightAmountSkin(float4 ShadowPos, float4 ShadowPosFar, float4 InvPos) {
 		}
 	}
 	return saturate(Shadow);
+}
 
+float GetLightAmountSkinDialog(float4 ShadowPos, float4 ShadowPosFar, float4 InvPos) {
+
+	float Shadow = 0.0f;
+	float x;
+	float y;
+	float distToExternalLight = 0.0f;
+
+	ShadowPos.xyz /= ShadowPos.w;
+	if (ShadowPos.x < -1.0f || ShadowPos.x > 1.0f ||
+		ShadowPos.y < -1.0f || ShadowPos.y > 1.0f ||
+		ShadowPos.z < 0.0f || ShadowPos.z > 1.0f)
+		return GetLightAmountSkinFar(ShadowPosFar, InvPos);
+
+	ShadowPos.x = ShadowPos.x * 0.5f + 0.5f;
+	ShadowPos.y = ShadowPos.y * -0.5f + 0.5f;
+
+	for (y = -2.0; y <= 2.0; y += 0.25f) {
+		for (x = -2.0; x <= 2.0; x += 0.25f) {
+			Shadow += LookupSkin(ShadowPos, float2(x, y));
+		}
+	}
+	Shadow /= 289.0f;
+
+	for (int j = 0; j < 6; j++) {
+		if (TESR_ShadowLightPosition[j].w) {
+			distToExternalLight = distance(InvPos.xyz, TESR_ShadowLightPosition[j].xyz);
+			if (distToExternalLight < TESR_ShadowLightPosition[j].w) {
+				Shadow += (saturate(1.000f - (distToExternalLight / (TESR_ShadowLightPosition[j].w))) * TESR_SunAmount.w);
+			}
+		}
+	}
+	return saturate(Shadow);
 }
