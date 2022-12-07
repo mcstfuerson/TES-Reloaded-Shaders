@@ -64,13 +64,22 @@ float4 DepthSkyMask(VSOUT IN) : COLOR0
 	return float4(sky, 1.0f);
 }
 
-float4 LightShaft(VSOUT IN) : COLOR0
+float3 BlendSoftLight(float3 a, float3 b)
+{
+	float3 c = 2.0f * a * b * (1.0f + a * (1.0f - b));
+	float3 a_sqrt = sqrt(a);
+	float3 d = (a + b * (a_sqrt - a)) * 2.0f - a_sqrt;
+	return (b < 0.5f) ? c : d;
+}
+
+float4 LightShaftSunCombine(VSOUT IN) : COLOR0
 {
 	float2 DeltaTexCoord = IN.UVCoord - sunview.xy;
 	float screendist = length(DeltaTexCoord * float2(1.0f, raspect));
 	DeltaTexCoord /= screendist;
 	DeltaTexCoord *= 0.5f * min(0.3f, screendist) * (1.0f / TESR_MasserRaysData.x) * TESR_MasserRaysRay.z;
 	float3 Color = tex2D(TESR_RenderedBuffer, IN.UVCoord).rgb;
+	float3 ori = tex2D(TESR_SourceBuffer, IN.UVCoord).rgb;
 	float IlluminationDecay = 1.0f;
 	float2 samplepos = IN.UVCoord;
 
@@ -84,38 +93,15 @@ float4 LightShaft(VSOUT IN) : COLOR0
 		IlluminationDecay *= TESR_MasserRaysRay.y;
 	}
 	Color *= TESR_MasserRaysRay.x / TESR_MasserRaysData.x;
-	return float4(Color, 1.0f);
-}
+	
+	if (forward > 0.0f) Color = 0.0f;
 
-float4 Blur(float2 Tex : TEXCOORD0) : COLOR0
-{
-	float4 col = tex2D(TESR_RenderedBuffer, Tex);
-	float2 tangent = normalize(Tex - sunview).yx * float2(TESR_ReciprocalResolution.y, -TESR_ReciprocalResolution.x);
-	col += 0.67f * tex2D(TESR_RenderedBuffer, Tex + tangent);
-	col += 0.67f * tex2D(TESR_RenderedBuffer, Tex - tangent);
-	col += 0.33f * tex2D(TESR_RenderedBuffer, Tex + 2.0f * tangent);
-	col += 0.33f * tex2D(TESR_RenderedBuffer, Tex - 2.0f * tangent);
-	if (forward > 0.0f) col = 0.0f;
-	return float4(col.rgb * 0.333f, 1.0f);
-}
-
-float3 BlendSoftLight(float3 a, float3 b)
-{
-	float3 c = 2.0f * a * b * (1.0f + a * (1.0f - b));
-	float3 a_sqrt = sqrt(a);
-	float3 d = (a + b * (a_sqrt - a)) * 2.0f - a_sqrt;
-	return (b < 0.5f) ? c : d;
-}
-
-float4 SunCombine(VSOUT IN) : COLOR0
-{
 	float Amount = saturate(TESR_MasserAmount.x * TESR_RaysPhaseCoeff.x);
-	float4 ori = tex2D(TESR_SourceBuffer, IN.UVCoord);
-	float4 shaft = tex2D(TESR_RenderedBuffer, IN.UVCoord) * TESR_MasserRaysData.z * Amount;
+	float3 shaft = Color * TESR_MasserRaysData.z * Amount;
 	float3 ray = TESR_MasserRaysRayColor.rgb;
-	shaft.rgb *= (-forward) * ray * saturate(1.0f - ori.rgb);
+	shaft.rgb *= (-forward) * ray * saturate(1.0f - ori);
 
-	float4 color = ori + shaft;
+	float3 color = ori + shaft.rgb;
 	color.rgb = BlendSoftLight(color.rgb, (ray * TESR_MasserRaysRayColor.a * Amount + 0.5f));
 	return float4(color.rgb, 1.0f);
 }
@@ -131,18 +117,6 @@ technique
 	pass
 	{
 		VertexShader = compile vs_3_0 FrameVS();
-		Pixelshader = compile ps_3_0 LightShaft();
-	}
-
-	pass
-	{
-		VertexShader = compile vs_3_0 FrameVS();
-		Pixelshader = compile ps_3_0 Blur();
-	}
-
-	pass
-	{
-		VertexShader = compile vs_3_0 FrameVS();
-		Pixelshader = compile ps_3_0 SunCombine();
+		Pixelshader = compile ps_3_0 LightShaftSunCombine();
 	}
 }

@@ -12,7 +12,7 @@ row_major float4x4 ModelViewProj : register(c0);
 row_major float4x4 ShadowProj : register(c21);
 float4 ShadowProjData : register(c25);
 float4 ShadowProjTransform : register(c26);
-row_major float4x4 TESR_ShadowCameraToLightTransform : register(c85);
+row_major float4x4 TESR_ShadowCameraToLightTransform[2] : register(c85);
 row_major float4x4 TESR_InvViewProjectionTransform : register(c70);
 
 // Registers:
@@ -56,6 +56,7 @@ struct VS_OUTPUT {
     float4 LTEXCOORD_1 : TEXCOORD1;
     float4 LTEXCOORD_7 : TEXCOORD7;
     float4 LTEXCOORD_8 : TEXCOORD8;
+    float4 LTEXCOORD_2 : TEXCOORD2;
 };
 
 // Code:
@@ -66,14 +67,17 @@ VS_OUTPUT main(VS_INPUT IN) {
     float1 q0;
     float4 r0;
     float4 r2;
+    float4 r3;
 
     r0 = mul(ModelViewProj, IN.LPOSITION.xyzw);
-	r2 = mul(r0, TESR_ShadowCameraToLightTransform);
+	r2 = mul(r0, TESR_ShadowCameraToLightTransform[0]);
+    r3 = mul(r0, TESR_ShadowCameraToLightTransform[1]);
     OUT.LPOSITION = r0;
     OUT.LTEXCOORD_0.xy = IN.LTEXCOORD_0.xy;
     OUT.LCOLOR_0.xyzw = IN.LCOLOR_0.xyzw;
     q0.x = 1 - saturate((FogParam.x - length(r0.xyz)) / FogParam.y);
     OUT.LTEXCOORD_1 = r2;
+    OUT.LTEXCOORD_2 = r3;
     OUT.LTEXCOORD_3.xyz = IN.LTANGENT.xyz;
     OUT.LTEXCOORD_4.xyz = IN.LBINORMAL.xyz;
     OUT.LTEXCOORD_5.xyz = IN.LNORMAL.xyz;
@@ -81,6 +85,7 @@ VS_OUTPUT main(VS_INPUT IN) {
     OUT.LTEXCOORD_7.w = q0.x * FogParam.z;
     OUT.LTEXCOORD_7.xyz = FogColor.rgb;
     OUT.LTEXCOORD_8 = mul(r0, TESR_InvViewProjectionTransform);
+    
 
     return OUT;
 };

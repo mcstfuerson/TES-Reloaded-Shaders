@@ -228,7 +228,7 @@ PS_OUTPUT main(VS_OUTPUT IN) {
     r3.y = dot(r0.xyz, q18.xyz);
     r3.xyzw = tex2D(AnisoMap, r3.xy);
 
-    if (1 != r4.w) {
+    if (1 < r4.w) {
         r2.xyz = r7.w + const_18.xyz;
         r5.w = r5.w + 1;
         l22.xyz = (r2.z == 0.0 ? LightData[4].xyz : (r2.y == 0.0 ? LightData[3].xyz : (r2.x == 0.0 ? LightData[2].xyz : r6.y)));
@@ -253,7 +253,7 @@ PS_OUTPUT main(VS_OUTPUT IN) {
     r3.y = dot(r0.xyz, q24.xyz);
     r3.xyzw = tex2D(AnisoMap, r3.xy);
 
-    if (2 != r4.w) {
+    if (2 < r4.w) {
         r2.xyz = r7.w + const_8.xyz;
         r5.w = r5.w + 1;
         l140.xyz = (r2.z == 0.0 ? LightData[6].xyz : (r2.y == 0.0 ? LightData[5].xyz : (r2.x == 0.0 ? LightData[4].xyz : r6.y)));
@@ -276,7 +276,7 @@ PS_OUTPUT main(VS_OUTPUT IN) {
     r0.xyzw = tex2D(AnisoMap, r9.xy);
     r2.xyzw = tex2D(AnisoMap, r2.xy);
 
-    if (3 != r4.w) {
+    if (3 < r4.w) {
         r3.w = dot(r5.xyz, r3.xyz);
         l386.x = 1.0 - sqr(saturate(length(r7.xyz) / LightData[7].w));
         q66.xyz = (r0.w * ((0.3 * ((IN.LCOLOR_0.y * (r6.x + HairTint.rgb)) + 0.5)) + 0.2)) + (r2.w * 0.7);

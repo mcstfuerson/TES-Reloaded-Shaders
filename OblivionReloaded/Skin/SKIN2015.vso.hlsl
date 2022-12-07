@@ -16,6 +16,8 @@ float4 ShadowProjTransform : register(c33);
 row_major float4x4 SkinModelViewProj : register(c1);
 row_major float4x4 TESR_ShadowCameraToLightTransform[2] : register(c34);
 row_major float4x4 TESR_InvViewProjectionTransform : register(c97);
+row_major float4x4 TESR_ShadowCameraToLightTransformSkin : register(c101);
+float4 TESR_ShadowBiasForward : register(c221);
 //
 //
 // Registers:
@@ -64,8 +66,9 @@ struct VS_OUTPUT {
     float4 Att1UV : TEXCOORD4;
     float4 Att2UV : TEXCOORD5;
     float4 ShadowUV0 : TEXCOORD6;
-    float4 ShadowUV1 : TEXCOORD7;
+    //float4 ShadowUV1 : TEXCOORD7;
     float4 InvPos : TEXCOORD8;
+    float4 ShadowUV2 : TEXCOORD9;
 };
 
 // Code:
@@ -162,7 +165,7 @@ VS_OUTPUT main(VS_INPUT IN) {
     OUT.Att2UV.w = 0.5;
     OUT.Att2UV.xyz = compress(lit5.xyz / LightPosition[2].w);
     OUT.ShadowUV0 = mul(m157, TESR_ShadowCameraToLightTransform[0]);
-	OUT.ShadowUV1 = mul(m157, TESR_ShadowCameraToLightTransform[1]);
+    OUT.ShadowUV2 = mul(m157, TESR_ShadowCameraToLightTransformSkin);
     OUT.InvPos = mul(m157, TESR_InvViewProjectionTransform);
 
     return OUT;

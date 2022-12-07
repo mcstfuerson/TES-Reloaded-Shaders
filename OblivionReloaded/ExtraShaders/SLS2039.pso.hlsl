@@ -12,9 +12,11 @@ sampler2D ShadowMap : register(s4);
 sampler2D ShadowMaskMap : register(s5);
 float4 Toggles : register(c7);
 float4 TESR_ShadowData : register(c8);
+float4 TESR_ShadowSkinData : register(c21);
 float4 TESR_ShadowLightPosition[12] : register(c9);
 sampler2D TESR_ShadowMapBufferNear : register(s8) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
 sampler2D TESR_ShadowMapBufferFar : register(s9) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
+sampler2D TESR_ShadowMapBufferSkin : register(s10) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
 
 // Registers:
 //
@@ -35,15 +37,19 @@ struct VS_OUTPUT {
     float3 texcoord_1 : TEXCOORD1_centroid;
     float3 texcoord_3 : TEXCOORD3_centroid;
     float4 texcoord_6 : TEXCOORD6;
-	float4 texcoord_7 : TEXCOORD7;
+    float4 texcoord_7 : TEXCOORD7;
     float4 texcoord_8 : TEXCOORD8;
+    float4 texcoord_9 : TEXCOORD9;
+    float4 LCOLOR_2 : COLOR2;
 };
 
 struct PS_OUTPUT {
     float4 color_0 : COLOR0;
 };
 
+//
 #include "../Shadows/Includes/Shadow.hlsl"
+#include "../Shadows/Includes/ShadowSkin.hlsl"
 
 PS_OUTPUT main(VS_OUTPUT IN) {
     PS_OUTPUT OUT;
@@ -59,11 +65,19 @@ PS_OUTPUT main(VS_OUTPUT IN) {
     float1 q4;
     float3 q7;
     float4 r0;
+    float shadow;
+
+    if (IN.LCOLOR_2.x < -10.0f) {
+        shadow = GetLightAmount(IN.texcoord_6, IN.texcoord_7, IN.texcoord_8);
+    }
+    else {
+        shadow = GetLightAmountSkin(IN.texcoord_9, IN.texcoord_6, IN.texcoord_8);
+    }
 
     r0.xyzw = tex2D(NormalMap, IN.NormalUV.xy);
     q11.x = r0.w * pow(abs(shades(normalize(expand(r0.xyz)), normalize(IN.texcoord_3.xyz))), Toggles.z);
     q4.x = dot(normalize(expand(r0.xyz)), normalize(IN.texcoord_1.xyz));
-    q7.xyz = ((0.2 >= q4.x ? (q11.x * max(q4.x + 0.5, 0)) : q11.x) * PSLightColor[0].rgb) * GetLightAmount(IN.texcoord_6, IN.texcoord_7, IN.texcoord_8);
+    q7.xyz = ((0.2 >= q4.x ? (q11.x * max(q4.x + 0.5, 0)) : q11.x) * PSLightColor[0].rgb) * shadow;
     OUT.color_0.a = weight(q7.xyz);
     OUT.color_0.rgb = saturate(q7.xyz);
 
