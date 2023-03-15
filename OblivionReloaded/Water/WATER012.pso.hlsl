@@ -38,6 +38,12 @@ sampler2D TESR_RenderedBuffer : register(s5) = sampler_state { };
 sampler2D TESR_DepthBuffer : register(s6) = sampler_state { };
 sampler2D TESR_samplerWater : register(s7) < string ResourceName = "Water\water_NRM_LOD.dds"; > = sampler_state { ADDRESSU = WRAP; ADDRESSV = WRAP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
 
+static const float nearZ = TESR_ProjectionTransform._34 / TESR_ProjectionTransform._33;
+static const float farZ = (TESR_ProjectionTransform._33 * nearZ) / (TESR_ProjectionTransform._33 - 1.0f);
+static const float Zmul = nearZ * farZ;
+static const float Zdiff = farZ - nearZ;
+static const float depthRange = nearZ - farZ;
+
 static const float4x4 ditherMat = { 0.0588, 0.5294, 0.1765, 0.6471,
 									0.7647, 0.2941, 0.8824, 0.4118,
 									0.2353, 0.7059, 0.1176, 0.5882,
@@ -66,63 +72,71 @@ static const float4x4 ditherMat = { 0.0588, 0.5294, 0.1765, 0.6471,
 // Structures:
 
 struct VS_OUTPUT {
-    float3 texcoord_0 : TEXCOORD0_centroid;
-    float3 texcoord_1 : TEXCOORD1_centroid;
-    float4 texcoord_2 : TEXCOORD2_centroid;
-    float4 texcoord_3 : TEXCOORD3_centroid;
-    float4 texcoord_4 : TEXCOORD4_centroid;
-    float4 texcoord_5 : TEXCOORD5_centroid;
-    float4 texcoord_6 : TEXCOORD6;
+	float3 texcoord_0 : TEXCOORD0_centroid;
+	float3 texcoord_1 : TEXCOORD1_centroid;
+	float4 texcoord_2 : TEXCOORD2_centroid;
+	float4 texcoord_3 : TEXCOORD3_centroid;
+	float4 texcoord_4 : TEXCOORD4_centroid;
+	float4 texcoord_5 : TEXCOORD5_centroid;
+	float4 texcoord_6 : TEXCOORD6;
 };
 
 struct PS_OUTPUT {
-    float4 color_0 : COLOR0;
+	float4 color_0 : COLOR0;
 };
 
 // Code:
 float3 toWorld(float2 tex)
 {
-    float3 v = float3(TESR_ViewTransform[2][0], TESR_ViewTransform[2][1], TESR_ViewTransform[2][2]);
-    v += (1/TESR_ProjectionTransform[0][0] * (2*tex.x-1)).xxx * float3(TESR_ViewTransform[0][0], TESR_ViewTransform[0][1], TESR_ViewTransform[0][2]);
-    v += (-1/TESR_ProjectionTransform[1][1] * (2*tex.y-1)).xxx * float3(TESR_ViewTransform[1][0], TESR_ViewTransform[1][1], TESR_ViewTransform[1][2]);
-    return v;
+	float3 v = float3(TESR_ViewTransform[2][0], TESR_ViewTransform[2][1], TESR_ViewTransform[2][2]);
+	v += (1 / TESR_ProjectionTransform[0][0] * (2 * tex.x - 1)).xxx * float3(TESR_ViewTransform[0][0], TESR_ViewTransform[0][1], TESR_ViewTransform[0][2]);
+	v += (-1 / TESR_ProjectionTransform[1][1] * (2 * tex.y - 1)).xxx * float3(TESR_ViewTransform[1][0], TESR_ViewTransform[1][1], TESR_ViewTransform[1][2]);
+	return v;
 }
 
 #define animFrames 32
-float2 get2DTex( float3 tex )
+float2 get2DTex(float3 tex)
 {
 	float2 return_tex = float2(0, tex.y);
-	return_tex.x = frac(tex.x)/animFrames + round( tex.z*(animFrames) )/animFrames;
+	return_tex.x = frac(tex.x) / animFrames + round(tex.z * (animFrames)) / animFrames;
 	return return_tex;
 }
 
-float3 getWaterNorm( float2 tex, float dist, float camera_vector_z, inout float3 specNorm )
+float readDepth(in float2 coord : TEXCOORD0)
+{
+	float posZ = tex2D(TESR_DepthBuffer, coord).x;
+	posZ = Zmul / ((posZ * Zdiff) - farZ);
+
+	return posZ;
+}
+
+float3 getWaterNorm(float2 tex, float dist, float camera_vector_z, inout float3 specNorm)
 {
 	float choppiness = TESR_WaveParams.x;
 	float waveWidth = TESR_WaveParams.y;
 	float LODdistance = TESR_WaterSettings.z;
 	float MinLOD = TESR_WaterSettings.w;
 
-	float lod = max( saturate( (camera_vector_z*camera_vector_z) * 50 * TESR_ProjectionTransform[0][0] /(TESR_ReciprocalResolution.x * dist) * LODdistance ), MinLOD);
+	float lod = max(saturate((camera_vector_z * camera_vector_z) * 50 * TESR_ProjectionTransform[0][0] / (TESR_ReciprocalResolution.x * dist) * LODdistance), MinLOD);
 	float2 Coord = tex / (1024 * waveWidth);
 
 	float frame = TESR_Tick.y * TESR_WaveParams.z / 1500;
-	float2 newCoord = get2DTex( float3(frac(Coord), frac(frame)) );
-	float4 sampledResult = tex2D( TESR_samplerWater, newCoord );
+	float2 newCoord = get2DTex(float3(frac(Coord), frac(frame)));
+	float4 sampledResult = tex2D(TESR_samplerWater, newCoord);
 
 	float2 temp_norm = sampledResult.rg * 2 - 1;
-	float3 norm = normalize(float3(temp_norm * choppiness * lod,1));
+	float3 norm = normalize(float3(temp_norm * choppiness * lod, 1));
 	specNorm = normalize(float3(temp_norm * choppiness * max(0.5, lod), 1));
 	return norm;
 }
 
-float getFresnelAboveWater( float3 ray, float3 norm )
+float getFresnelAboveWater(float3 ray, float3 norm)
 {
-	float temp_cos = dot( -ray, norm );
-	float2 vec = float2(temp_cos, sqrt(1-temp_cos*temp_cos));
+	float temp_cos = dot(-ray, norm);
+	float2 vec = float2(temp_cos, sqrt(1 - temp_cos * temp_cos));
 
-	float fresnel = vec.x - 1.33 * sqrt(1 - 0.565*vec.y*vec.y);
-	fresnel /= vec.x + 1.33 * sqrt(1 - 0.565*vec.y*vec.y);
+	float fresnel = vec.x - 1.33 * sqrt(1 - 0.565 * vec.y * vec.y);
+	fresnel /= vec.x + 1.33 * sqrt(1 - 0.565 * vec.y * vec.y);
 	fresnel = saturate(fresnel * fresnel);
 
 	return fresnel;
@@ -130,67 +144,102 @@ float getFresnelAboveWater( float3 ray, float3 norm )
 
 
 PS_OUTPUT main(VS_OUTPUT IN, float2 PixelPos : VPOS) {
-    PS_OUTPUT OUT;
+	PS_OUTPUT OUT;
 
-	float2 UVCoord = (PixelPos+0.5)*TESR_ReciprocalResolution.xy;
+	float2 UVCoord = (PixelPos + 0.5) * TESR_ReciprocalResolution.xy;
 	float3 eyepos = IN.texcoord_2.xyz;
 	eyepos.z = -IN.texcoord_1.z;
 
-    float3 camera_vector = toWorld(UVCoord);
-	float3 norm_camera_vector = normalize( camera_vector );
+	float4 color = tex2D(TESR_RenderedBuffer, UVCoord);
+	float depth = readDepth(UVCoord);
+	float3 camera_vector = toWorld(UVCoord);
+	float3 norm_camera_vector = normalize(camera_vector);
+	float3 world_pos = eyepos + camera_vector * depth;
 
 	float4 sunColor = float4(TESR_SunColor.rgb, 1);
 	float nightAmount = TESR_SunColor.a;
-	float3 extCoeff = TESR_WaterCoefficients.xyz;
-	float scattCoeff = TESR_WaterCoefficients.w;
+	float causticsStrength = TESR_WaterVolume.x;
+	float turbidity = TESR_WaterVolume.z;
+	float3 extCoeff = TESR_WaterCoefficients.xyz * turbidity;
+	float scattCoeff = TESR_WaterCoefficients.w * turbidity;
 	float reflectivity = TESR_WaveParams.w;
 	float waveWidth = TESR_WaveParams.y;
 
+	float uw_pos = world_pos.z / camera_vector.z;
 	float dist = eyepos.z / -camera_vector.z;
-	float2 surfPos = eyepos.xy + camera_vector.xy * dist;
+	float2 surfPos = world_pos.xy - camera_vector.xy * uw_pos;
 
 	float3 normal = 0;
-	float3 specNorm = float3(0,0,1);
-	normal = getWaterNorm( surfPos, dist, -camera_vector.z, specNorm);
+	float3 specNorm = 0;
+	float height = 0;
+	normal = getWaterNorm(surfPos, depth - uw_pos, -camera_vector.z, specNorm);
+	eyepos.z += height;
+	world_pos = eyepos + camera_vector * depth;
+	uw_pos = world_pos.z / camera_vector.z;
+
+	float4 refract_color = color;
+
+	float2 refPos = UVCoord + 0.01 * normal.yx;
+	float3 refract_world_pos = eyepos + toWorld(refPos) * readDepth(refPos);
+
+	if (refract_world_pos.z < 0)
+		refract_color = tex2D(TESR_RenderedBuffer, refPos);
+	else
+		refract_world_pos = world_pos;
+
+	//Render Caustics
+	float3 dx = ddx(world_pos);
+	float3 dy = ddy(world_pos);
+	float3 waterfloorNorm = normalize(cross(dx, dy));
+
+	float3 causticsPos = refract_world_pos - SunDir.xyz * (refract_world_pos.z / SunDir.z);
+	float caustics = causticsStrength * tex2D(NormalMap, causticsPos.xy / (512 * waveWidth)).b;
+	float causticsAngle = saturate(dot(-waterfloorNorm, SunDir.xyz));
+	refract_color.rgb *= 1 + caustics * causticsAngle * sunColor.xyz - 0.3;
 
 	//Calculate Refraction color
-	float SinBoverSinA = -norm_camera_vector.z;
-	float3 waterVolColor = scattCoeff * FogColor.xyz / ( extCoeff * (1 + SinBoverSinA) );
+	float refract_uw_pos = refract_world_pos.z / camera_vector.z;
+	refract_color.rgb *= exp(-extCoeff * (refract_uw_pos - refract_world_pos.z) / 70);
 
-	float4 refract_color = float4( waterVolColor.rgb, 1 );
+	float SinBoverSinA = -norm_camera_vector.z;
+	float3 waterVolColor = scattCoeff * FogColor.xyz / (extCoeff * (1 + SinBoverSinA));
+
+	waterVolColor *= 1 - exp(-extCoeff * (1 + SinBoverSinA) * refract_uw_pos / 70);
+
+	refract_color.rgb += waterVolColor;
 
 	//Calculate reflection color
 	float4 reflection = FogColor;
 
-	float2 refPos = UVCoord + 0.05*normal.yx;
-	reflection = tex2D(ReflectionMap, float2(refPos.x,1-refPos.y) );
+	refPos = UVCoord + 0.05 * normal.yx;
+	reflection = tex2D(ReflectionMap, float2(refPos.x, 1 - refPos.y));
 
-	float fresnel = saturate( getFresnelAboveWater( norm_camera_vector, normal ) * reflectivity );
-	float4 water_result = lerp( refract_color, reflection, fresnel );
+	float fresnel = saturate(getFresnelAboveWater(norm_camera_vector, normal) * reflectivity);
+	float4 water_result = lerp(refract_color, reflection, fresnel);
 
-	float sunReflectionStrength = dot(reflection.rgb, float3(0.21,0.72,0.07) )/0.865;
-	sunReflectionStrength = 5 * pow( sunReflectionStrength, 5);
-	sunReflectionStrength *= lerp(1,15,saturate(nightAmount*nightAmount));
+	float sunReflectionStrength = dot(reflection.rgb, float3(0.21, 0.72, 0.07)) / 0.865;
+	sunReflectionStrength = 5 * pow(sunReflectionStrength, 5);
+	sunReflectionStrength *= lerp(1, 15, saturate(nightAmount * nightAmount));
 
-	float specular = saturate(dot( norm_camera_vector, reflect( SunDir.xyz, specNorm ) ));
-	water_result.xyz += 4*saturate(sunReflectionStrength)*pow(specular, dist*0.3 + 750) * sunColor.xyz;
+	float specular = saturate(dot(norm_camera_vector, reflect(SunDir.xyz, specNorm)));
+	water_result.xyz += 4 * saturate(sunReflectionStrength) * pow(specular, dist * 0.3 + 750) * sunColor.xyz;
 
-	float eyeFogDist = eyepos.z * (1.28 - 0.28 * (2*UVCoord.x-1)*(2*UVCoord.x-1));
-	float eyeFog = saturate(eyeFogDist/30500 + 0.37);
+	float eyeFogDist = eyepos.z * (1.28 - 0.28 * (2 * UVCoord.x - 1) * (2 * UVCoord.x - 1));
+	float eyeFog = saturate(eyeFogDist / 30500 + 0.37);
 	reflection = lerp(reflection, FogColor, eyeFog);
 
 	//Add above water fog
-    float fog = 1 - saturate((FogParam.x - length(IN.texcoord_1.xyz)) / FogParam.y);
+	float fog = 1 - saturate((FogParam.x - length(IN.texcoord_1.xyz)) / FogParam.y);
 	water_result.rgb = (fog * (reflection.rgb - water_result.rgb)) + water_result.rgb;
 
-	water_result.rgb += ditherMat[ PixelPos.x%4 ][ PixelPos.y%4 ] / 255;
+	water_result.rgb += ditherMat[PixelPos.x % 4][PixelPos.y % 4] / 255;
 
 	water_result.rgb = saturate(water_result.rgb);
 
 	OUT.color_0.rgb = water_result.rgb;
 	OUT.color_0.a = 1;
 
-    return OUT;
+	return OUT;
 };
 
 // approximately 84 instruction slots used (4 texture, 80 arithmetic)
