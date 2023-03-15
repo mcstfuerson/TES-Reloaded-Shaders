@@ -28,7 +28,7 @@ PS_OUTPUT main(VS_OUTPUT IN) {
 		return OUT;
 	}
 
-	if (len < TESR_ShadowCubeData.z) {
+	if (len < TESR_ShadowCubeData.z && TESR_ShadowCubeData.x == 0.0f) {
 		IN.texcoord_0.w = len * 0.157f;
 	}
 
