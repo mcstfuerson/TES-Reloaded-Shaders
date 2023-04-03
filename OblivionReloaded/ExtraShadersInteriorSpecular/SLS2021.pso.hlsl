@@ -98,6 +98,11 @@ PS_OUTPUT main(VS_OUTPUT IN) {
     q13.xyz = normalize(expand(r1.xyz));			// partial precision
     q4.x = r1.w * pow(abs(shades(q13.xyz, normalize(IN.texcoord_4.xyz))), Toggles.z);			// partial precision
     q19.x = r1.w * pow(abs(shades(q13.xyz, normalize(IN.texcoord_3.xyz))), Toggles.z);			// partial precision
+
+    q4.x *= Shadow;
+
+    q19.x *= Shadow;
+
     q2.x = dot(q13.xyz, normalize(IN.texcoord_2.xyz));			// partial precision
     q7.xyz = saturate(((0.2 >= q2.x ? (q4.x * max(q2.x + 0.5, 0)) : q4.x) * PSLightColor[1].rgb) * q5.x);			// partial precision
     q6.x = dot(q13.xyz, IN.texcoord_1.xyz);			// partial precision
