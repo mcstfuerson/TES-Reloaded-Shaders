@@ -1,7 +1,7 @@
 //Poisson samples generated via https://github.com/bartwronski/PoissonSamplingGenerator
 
 //TODO: all radius should be resolution dependent but these are good enough for now
-const float RADIUS = 6.0f / 8000.0f;
+static const float RADIUS = 6.0f / 8000.0f;
 static const float RADIUS_FAR = 2.0f / 8000.0f;
 static const uint SAMPLE_NUM = 16;
 static const uint SAMPLE_NUM_FAR = 9;
