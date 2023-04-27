@@ -104,7 +104,7 @@ PS_OUTPUT main(VS_OUTPUT IN) {
     r2.xyz = normalize(r2.xyz + float3(noisen.xy * TESR_TerrainData.y, 0));
 	
 	float3 LightDir = IN.Light0Dir.xyz;
-	LightDir.x = LightDir.x < 0.4 ? max(LightDir.y, 0.8) : LightDir.x; // Trick to avoid to flat the bumpmap when midday
+	//LightDir.x = LightDir.x < 0.4 ? max(LightDir.y, 0.8) : LightDir.x; // Trick to avoid to flat the bumpmap when midday
 	
     q0.xyz = (shades(r2.xyz, LightDir) * PSLightColor[0].rgb) + AmbientColor.rgb;
     q1.xyz = r0.xyz * max(q0.xyz, 0);

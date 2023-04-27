@@ -46,6 +46,8 @@ static const float BIAS = 0.001f;
 static const float farMaxInc = 0.2f;
 static const float nearMaxInc = 1.0f;
 
+#include "../Shadows/Includes/PointSamples.hlsl"
+
 struct VSOUT
 {
 	float4 vertPos : POSITION;
@@ -81,8 +83,8 @@ float3 toWorld(float2 tex)
 	return v;
 }
 
-float Lookup(samplerCUBE buffer, float3 LightDir, float Distance, float Blend, float2 OffSet) {
-	float Shadow = texCUBE(buffer, LightDir + float3(OffSet.x * TESR_ShadowCubeData.z, OffSet.y * TESR_ShadowCubeData.z, 0.0f)).r;
+float Lookup(samplerCUBE buffer, float3 LightDir, float Distance, float Blend) {
+	float Shadow = texCUBE(buffer, LightDir).r;
 	if (Shadow > 0.0f && Shadow < 1.0f && Shadow < Distance - BIAS) return saturate(Blend + (1 - TESR_SunAmount.w));
 	return 1.0f;
 }
@@ -92,8 +94,9 @@ float LookupLightAmount(samplerCUBE buffer, float4 WorldPos, float4 LightPos) {
 	float Shadow = 0.0f;
 	float3 LightDir;
 	float Distance;
-	float x;
-	float y;
+	float x = 0;
+	float y = 0;
+	float z = 0;
 
 	LightDir = WorldPos.xyz - LightPos.xyz;
 	LightDir.z *= -1;
@@ -101,14 +104,21 @@ float LookupLightAmount(samplerCUBE buffer, float4 WorldPos, float4 LightPos) {
 	LightDir = LightDir / Distance;
 	Distance = Distance / LightPos.w;
 
-	float Blend = saturate(Distance) * TESR_ShadowCubeData.y;
-	
-	for (y = -1.5f; y <= 1.5f; y += 1.5f) {
-		for (x = -1.5f; x <= 1.5f; x += 1.5f) {
-			Shadow += Lookup(buffer, LightDir, Distance, Blend, float2(x, y));
-		}
+	float3 ShadowCoord = LightDir;
+	float darkness = saturate(Distance);
+	float darknessStart = 0.9f;
+	float darknessEnd = 0.75f;
+
+	float modifier = smoothstep(darknessEnd, darknessStart, darkness);
+	float darknessRange = 1 - TESR_ShadowCubeData.y;
+	float darknessMod = 1 - ((1 - modifier) * darknessRange);
+	darkness = darkness * darknessMod;
+
+	for (uint i = 0; i < SAMPLE_NUM; i++) {
+		Shadow += Lookup(buffer, (ShadowCoord + (POISSON_SAMPLES_SKIN[i] * .004)), Distance, darkness);
 	}
-	Shadow /= 9.0f;
+
+	Shadow /= SAMPLE_NUM;
 
 	return max(0.5f, Shadow);
 }
@@ -204,7 +214,7 @@ float4 Shadow(VSOUT IN) : COLOR0{
 		}
 	}
 
-	color.rgb *= saturate(fShadow*fogCoeff);
+	color.rgb *= saturate(fShadow * fogCoeff);
 	return float4(color, 1.0f);
 
 }

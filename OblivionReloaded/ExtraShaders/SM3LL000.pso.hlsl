@@ -187,18 +187,22 @@ PS_OUTPUT main(VS_OUTPUT IN) {
       r1.xyz = (max(r0.w * (1.0 - sqr(saturate(length(l12.xyz) / LightData[7].w))), 0) * (r3.y == 0.0 ? LightData[7].xyz : (r3.x == 0.0 ? LightData[6].xyz : r2.y))) + r1.xyz;			// partial precision
     }
 
-    r0.xyzw = tex2D(BaseMap, IN.BaseUV.xy);			// partial precision
-    q28.xyz = (r1.xyz + ((ToggleADTS.x * AmbientColor.rgb) + (r2.z - ToggleADTS.x))) * (r0.xyz * IN.color_0.rgb);			// partial precision
-    OUT.color_0.a = r0.w * MatAlpha.x;			// partial precision
-    OUT.color_0.rgb = (IN.texcoord_7.w * (IN.texcoord_7.xyz - q28.xyz)) + q28.xyz;			// partial precision
-
     Shadow = GetLightAmount(IN.texcoord_8);
 
     if ((r9.r > .9 && r9.g < .1 && r9.b > .9)) {
         Shadow = 1;
     }
 
-    OUT.color_0.rgb *= Shadow;
+    r1 *= Shadow;
+
+    r0.xyzw = tex2D(BaseMap, IN.BaseUV.xy);			// partial precision
+    q28.xyz = (r1.xyz + ((ToggleADTS.x * AmbientColor.rgb) + (r2.z - ToggleADTS.x))) * (r0.xyz * IN.color_0.rgb);			// partial precision
+    OUT.color_0.a = r0.w * MatAlpha.x;			// partial precision
+    OUT.color_0.rgb = (IN.texcoord_7.w * (IN.texcoord_7.xyz - q28.xyz)) + q28.xyz;			// partial precision
+
+
+
+   // OUT.color_0.rgb *= Shadow;
 
     return OUT;
 };

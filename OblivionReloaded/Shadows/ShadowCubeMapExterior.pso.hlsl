@@ -28,8 +28,8 @@ PS_OUTPUT main(VS_OUTPUT IN) {
 		return OUT;
 	}
 
-	if (len < TESR_ShadowCubeData.z && TESR_ShadowCubeData.x == 0.0f) {
-		IN.texcoord_0.w = len * 0.157f;
+	if (len < TESR_ShadowCubeData.z) {
+		IN.texcoord_0.w = len * 0.09f;
 	}
 
 	OUT.color_0 = length(IN.texcoord_0) / TESR_ShadowCubeData.z;
