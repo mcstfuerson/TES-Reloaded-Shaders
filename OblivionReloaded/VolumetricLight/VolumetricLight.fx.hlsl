@@ -18,6 +18,7 @@ float4 TESR_ReciprocalResolution;
 float4 TESR_CameraPosition;
 float4 TESR_ShadowData;
 float4 TESR_ShadowLightDir;
+float4 TESR_WaterSettings;
 
 float4 TESR_VolumetricLightData1;
 //x = Accum R
@@ -105,6 +106,8 @@ static const float2 OffsetMaskH = float2(1.0f, 0.0f);
 static const float2 OffsetMaskV = float2(0.0f, 1.0f);
 
 static const float accumLightStrength = 3.0f; //TODO shouldnt have to use this but dont touch it for now
+
+static const float3 eyepos = float3(TESR_CameraPosition.x, TESR_CameraPosition.y, TESR_CameraPosition.z - TESR_WaterSettings.x);
 
 struct VSOUT
 {
@@ -326,6 +329,11 @@ float4 VolumetricLightBaseSky(VSOUT IN) : COLOR0
 
         baseFogCoeff = heightBasedCoeff;
     }
+    
+    if (eyepos.z < 0.0f)
+    {
+        baseFogCoeff = 0.0f;
+    }
 
     return float4(color + (baseFogColor * baseFogCoeff), 1.0f);
 
@@ -410,6 +418,11 @@ float4 VolumetricLight(VSOUT IN) : COLOR0
 
     accumLight *= fogCoeff;
     accumLight += lerp(-NOISE_GRANULARITY, NOISE_GRANULARITY, random(uv));
+    
+    if (eyepos.z < 0.0f)
+    {
+        accumLight *= 0.3f;
+    }
 
     return float4(accumLight, 1.0f);
 }
