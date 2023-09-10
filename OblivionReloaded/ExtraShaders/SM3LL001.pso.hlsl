@@ -394,6 +394,10 @@ PS_OUTPUT main(VS_OUTPUT IN) {
         //endif
     }
 
+    Shadow = GetLightAmount(IN.texcoord_8);
+
+    r2 *= Shadow;
+
     r1.z = r3.z - ToggleADTS.x;
     
     r1.w = ToggleADTS.x;
@@ -415,10 +419,6 @@ PS_OUTPUT main(VS_OUTPUT IN) {
     OUT.color_0.rgb = (IN.texcoord_7.w * r0.xyz) + r1.xyz;
     
     OUT.color_0.a = r0.w * MatAlpha.x;
-
-    Shadow = GetLightAmount(IN.texcoord_8);
-
-    OUT.color_0.rgb *= Shadow;
     
     return OUT;
 };
