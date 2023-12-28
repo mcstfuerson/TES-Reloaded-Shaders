@@ -102,7 +102,7 @@ sampler2D TESR_ShadowMapBufferFar : register(s4) = sampler_state
 };
 
 static const float4x4 DITHER_PATTERN = { 0.0f, 0.5f, 0.125f, 0.625f, 0.75f, 0.22f, 0.875f, 0.375f, 0.1875f, 0.6875f, 0.0625f, 0.5625f, 0.9375f, 0.4375f, 0.8125f, 0.3125f };
-static const float resPercent = 0.5f;
+static const float resPercent = 1.0f;
 
 static const float nearZ = TESR_ProjectionTransform._43 / TESR_ProjectionTransform._33;
 static const float farZ = (TESR_ProjectionTransform._33 * nearZ) / (TESR_ProjectionTransform._33 - 1.0f);
@@ -167,23 +167,6 @@ static const float BlurWeights[cKernelSize] =
 };
 
 static const float2 BlurOffsets[cKernelSize] =
-{
-    float2(-2.4f * TESR_ReciprocalResolution.x, -2.4f * TESR_ReciprocalResolution.y),
-	float2(-2.0f * TESR_ReciprocalResolution.x, -2.0f * TESR_ReciprocalResolution.y),
-	float2(-1.6f * TESR_ReciprocalResolution.x, -1.6f * TESR_ReciprocalResolution.y),
-	float2(-1.2f * TESR_ReciprocalResolution.x, -1.2f * TESR_ReciprocalResolution.y),
-	float2(-0.8f * TESR_ReciprocalResolution.x, -0.8f * TESR_ReciprocalResolution.y),
-	float2(-0.4f * TESR_ReciprocalResolution.x, -0.4f * TESR_ReciprocalResolution.y),
-	float2(0.0f * TESR_ReciprocalResolution.x, 0.0f * TESR_ReciprocalResolution.y),
-	float2(0.4f * TESR_ReciprocalResolution.x, 0.4f * TESR_ReciprocalResolution.y),
-	float2(0.8f * TESR_ReciprocalResolution.x, 0.8f * TESR_ReciprocalResolution.y),
-	float2(1.2f * TESR_ReciprocalResolution.x, 1.2f * TESR_ReciprocalResolution.y),
-	float2(1.6f * TESR_ReciprocalResolution.x, 1.6f * TESR_ReciprocalResolution.y),
-	float2(2.0f * TESR_ReciprocalResolution.x, 2.0f * TESR_ReciprocalResolution.y),
-	float2(2.4f * TESR_ReciprocalResolution.x, 2.4f * TESR_ReciprocalResolution.y)
-};
-
-static const float2 BlurOffsetsSky[cKernelSize] =
 {
     float2(-1.2f * TESR_ReciprocalResolution.x, -1.2f * TESR_ReciprocalResolution.y),
 	float2(-1.0f * TESR_ReciprocalResolution.x, -1.0f * TESR_ReciprocalResolution.y),
@@ -569,21 +552,13 @@ float4 Blur(VSOUT IN) : COLOR0
     float3 Color2 = 0;
     float3 VolumeLight = tex2D(TESR_RenderedBuffer, IN.UVCoord);
     float depth = readDepthShadow(IN.UVCoord);
-    float depth2 = readDepth(IN.UVCoord);
     float3 shadowCameraVector = toWorld(IN.UVCoord) * depth;
     float4 pos = float4(TESR_CameraPosition.xyz + shadowCameraVector, 1.0f);
     float blurDistance = TESR_VolumetricLightData3.z;
     float blurCoeff = saturate((distance(pos, TESR_CameraPosition.xyz) / blurDistance));
     float2 blur[cKernelSize];
 
-    if (depth2 < 0.99f)
-    {
-        blur = BlurOffsets;
-    }
-    else
-    {
-        blur = BlurOffsetsSky;
-    }
+    blur = BlurOffsets;
 		
     for (int i = 0; i < cKernelSize; i++)
     {
