@@ -111,6 +111,7 @@ PS_OUTPUT main(VS_OUTPUT IN) {
     float3 r9;
     float3 t0;
     float1 t1;
+    float1 alpha;
 
 #define	TanSpaceProj	float3x3(r3.xyz, r5.xyz, r4.xyz)
 
@@ -263,8 +264,9 @@ PS_OUTPUT main(VS_OUTPUT IN) {
     r1.xyz = r1.xyz * r0.xyz;    
     r0.xyz = IN.texcoord_7.xyz - r1.xyz;    
     OUT.color_0.rgb = (IN.texcoord_7.w * r0.xyz) + r1.xyz;    
-    OUT.color_0.a = r0.w * MatAlpha.x;    
-
+    alpha = r0.w * MatAlpha.x;
+    
+    OUT.color_0.a = (alpha < 0.5f ? 0.0f : alpha);
 
     return OUT;
 };
