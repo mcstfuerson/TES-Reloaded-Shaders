@@ -109,9 +109,7 @@ float4 Shadow(VSOUT IN) : COLOR0{
 
 	float3 color = tex2D(TESR_RenderedBuffer, IN.UVCoord).rgb;
 
-	if (length(color) > 1.0f) {
-		return float4(color, 1.0f);
-	}
+    float blend = smoothstep(1.0f, 1.5f, length(color));
 
 	float depth = readDepth(IN.UVCoord);
 	float3 camera_vector = toWorld(IN.UVCoord) * depth;
@@ -169,7 +167,7 @@ float4 Shadow(VSOUT IN) : COLOR0{
 		}
 	}
 
-	color.rgb *= saturate(fShadow * fogCoeff);
+    color.rgb *= saturate((fShadow * fogCoeff) + blend);
 	return float4(color, 1.0f);
 
 }
