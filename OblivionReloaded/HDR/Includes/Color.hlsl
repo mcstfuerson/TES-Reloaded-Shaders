@@ -13,6 +13,7 @@ static const
 float3x3 RGB_XYZ  = {{+ 3.240479  , - 1.537150  , - 0.498535	 },
 			 {- 0.969256  , + 1.875992  , + 0.041556	 },
 			 {+ 0.055648  , - 0.204043  , + 1.057311	 }};
+			 
 
 float GetLuminance( const float3 rgb )
 {
@@ -28,6 +29,33 @@ float3 GetRGBfromXYZ( const float3 xyz )
 {
     return mul( RGB_XYZ, xyz );
 }
+
+static const
+float3x3 YUVs_RGB  = {{+ 0.29900, + 0.58700	 , + 0.11400	},
+			{- 0.14740, - 0.28950	 , + 0.43690	},
+			{+ 0.61500, - 0.51500	 , - 0.10000	}};
+
+static const
+float3x3 RGB_YUVs  = {{+ 1	     , + 0.000	   , + 1.13980	 },
+			{+ 1	     , - 0.39380   , - 0.58050	 },
+			{+ 1	     , + 2.02790   , + 0.000	 }};
+
+float GetIntensity( const float3 rgb )
+{
+//  return dot( rgb, float3( 0.333f, 0.334f, 0.333f ) );
+    return dot( YUVs_RGB[0], rgb );
+}
+
+float3 GetYUV( const float3 rgb )
+{
+    return mul( YUVs_RGB, rgb );
+}
+
+float3 GetRGB( const float3 yuv )
+{
+    return mul( RGB_YUVs, yuv );
+}
+
 
 float3 GetWhitePoint()
 {

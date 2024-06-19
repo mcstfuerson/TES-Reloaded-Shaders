@@ -8,8 +8,11 @@
 //
 float4 HDRParam : register(c1);
 float4 TESR_ToneMapping : register(c19);
+float4 TESR_ReciprocalResolution : register(c20);
 
 sampler2D ScreenSpace : register(s0);
+
+#define ar float(TESR_ReciprocalResolution.z)
 //
 //
 // Registers:
@@ -21,6 +24,7 @@ sampler2D ScreenSpace : register(s0);
 //
 
 #include "Includes/Color.hlsl"
+#include "Includes/Common.hlsl"
 
 // Structures:
 
@@ -32,19 +36,22 @@ struct PS_OUTPUT {
     float4 color_0 : COLOR0;
 };
 
-// Code:
-
+/**
+ *Credits/Sources:
+ *
+ *noonemusteverknow: https://www.nexusmods.com/oblivion/mods/50563
+ *luluco250: https://github.com/luluco250
+**/
 PS_OUTPUT main(VS_OUTPUT IN) {
     PS_OUTPUT OUT;
 
     float3 color;
 	float3 result;
 
-    color = tex2D(ScreenSpace, IN.ScreenOffset.xy).rgb;
-	
-	color = pow(abs(color), TESR_ToneMapping.w);
-    result = GetRGBfromXYZ(max(GetXYZfromRGB(color) - HDRParam.x, 0) * HDRParam.y);
-	result = pow(abs(result), 1.0 / TESR_ToneMapping.w);
+    color = tex2D(ScreenSpace, scale_uv(IN.ScreenOffset.xy, float2(1.0, ar), 0.5));	
+	color = max(color, 0.0);
+	color = GAMMA2LINEAR(color);
+    result = GetRGBfromXYZ(max(GetXYZfromRGB(color), 0));
 	
     OUT.color_0.a = 1;
     OUT.color_0.rgb = result;

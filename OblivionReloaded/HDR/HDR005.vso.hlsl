@@ -19,19 +19,22 @@ float4 texRatio0 : register(c6);
 
 // Structures:
 
-struct VS_INPUT {
+struct VS_INPUT
+{
     float4 position : POSITION;
     float4 texcoord_0 : TEXCOORD0;
 };
 
-struct VS_OUTPUT {
+struct VS_OUTPUT
+{
     float4 position : POSITION;
     float2 texcoord_0 : TEXCOORD0;
 };
 
 // Code:
 
-VS_OUTPUT main(VS_INPUT IN) {
+VS_OUTPUT main(VS_INPUT IN)
+{
     VS_OUTPUT OUT;
 
     OUT.position.xyzw = IN.position.xyzw;
