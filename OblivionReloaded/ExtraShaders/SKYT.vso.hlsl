@@ -10,6 +10,7 @@ float4 BlendColor[3] : register(c4);
 row_major float4x4 ModelViewProj : register(c0);
 row_major float4x4 TESR_InvViewProjectionTransform : register(c97);
 float4 TESR_FogColor : register(c24);
+float4 TESR_GEOM_Toggles : register(c50);
 //
 //
 // Registers:
@@ -52,7 +53,7 @@ VS_OUTPUT main(VS_INPUT IN) {
     float4 r1;
     float fogStart = 200.0f;
 
-    r0.xyz = (IN.color_0.r * BlendColor[0].rgb) + (BlendColor[1].rgb * IN.color_0.g);
+    r0.xyz = ((IN.color_0.r * BlendColor[0].rgb) * TESR_GEOM_Toggles.x) + (BlendColor[1].rgb * IN.color_0.g);
     OUT.color_0.a = BlendColor[0].a * IN.color_0.a;
     r1 = mul(ModelViewProj, IN.position.xyzw);
     float4 pos = mul(r1, TESR_InvViewProjectionTransform);
