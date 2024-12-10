@@ -17,6 +17,8 @@ float4 TESR_ShadowData : register(c8);
 float4 TESR_ShadowLightPosition[12] : register(c9);
 sampler2D TESR_ShadowMapBufferNear : register(s8) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
 sampler2D TESR_ShadowMapBufferFar : register(s9) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
+float4 TESR_SpecularData : register(c101);
+float4 TESR_TerrainData : register(c102);
 
 // Registers:
 //
@@ -46,6 +48,7 @@ struct VS_OUTPUT {
     float4 texcoord_6 : TEXCOORD6;
 	float4 texcoord_7 : TEXCOORD7;
     float4 texcoord_8 : TEXCOORD8;
+    float4 texcoord_9 : TEXCOORD9_centroid;
 };
 
 struct PS_OUTPUT {
@@ -73,8 +76,15 @@ PS_OUTPUT main(VS_OUTPUT IN) {
     float4 r0;
     float4 r1;
     float4 r5;
+    float shadow;
+    float3 nl;
+    float s;
+    float spec;
 
+    shadow = GetLightAmount(IN.texcoord_6, IN.texcoord_7, IN.texcoord_8);
     r5.xyzw = tex2D(NormalMap, IN.BaseUV.xy);
+    s = r5.w;
+    spec = s < 1.0f ? 0 : pow(shades(normalize(expand(r5.xyz)), normalize(IN.texcoord_9.xyz)), 100.0f);
     r0.xyzw = tex2D(BaseMap, IN.BaseUV.xy);
     att7.x = tex2D(AttenuationMap, IN.texcoord_5.xy).r;
     att11.x = tex2D(AttenuationMap, IN.texcoord_5.zw).r;
@@ -83,11 +93,22 @@ PS_OUTPUT main(VS_OUTPUT IN) {
     r1.w = saturate((1 - att7.x) - att11.x);
     q4.xyz = normalize(expand(r5.xyz));
     q5.xyz = saturate((1 - att0.x) - att2.x) * (shades(q4.xyz, normalize(IN.texcoord_2.xyz)) * PSLightColor[1].rgb);
-    q6.xyz = (GetLightAmount(IN.texcoord_6, IN.texcoord_7, IN.texcoord_8) * (shades(q4.xyz, IN.texcoord_1.xyz) * PSLightColor[0].rgb)) + q5.xyz;
+    nl = (shades(q4.xyz, IN.texcoord_1.xyz) * PSLightColor[0].rgb);
+    q6.xyz = (shadow * nl) + q5.xyz;
     q9.xyz = (r1.w * (shades(q4.xyz, normalize(IN.texcoord_3.xyz)) * PSLightColor[2].rgb)) + q6.xyz;
     OUT.color_0.a = r0.w;
     OUT.color_0.rgb = q9.xyz + AmbientColor.rgb;
-
+    float gmr = saturate(r0.g - r0.r);
+    float gmb = saturate(r0.g - r0.b);
+    float rmb = saturate(r0.r - r0.b);
+    float gCoeff = saturate(1 - ((gmr + gmb) * 4));
+    float rCoeff = saturate(1 - ((rmb) * 10));
+    float coeff = min(gCoeff, rCoeff);
+    coeff = min(coeff, TESR_SpecularData.x);
+    float baseIntensity = smoothstep(.25f, 1.0f, length(r0.xyz));
+    float3 specColor1 = (((((coeff * spec) * shadow) * saturate(nl * 2.5f)) * baseIntensity));
+    float3 specColor2 = ((((PSLightColor[0].rgb * (coeff * spec) * shadow) * saturate(nl * 2.5f)) * baseIntensity));
+    OUT.color_0.rgb += lerp(specColor1, specColor2, 0.6f);
     return OUT;
 };
 

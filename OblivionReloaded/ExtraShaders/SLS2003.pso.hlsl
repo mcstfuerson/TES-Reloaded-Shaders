@@ -12,7 +12,7 @@ float4 Toggles : register(c7);
 float4 TESR_ShadowData : register(c5);
 float4 TESR_ShadowSkinData : register(c8);
 float4 TESR_ShadowLightPosition[12] : register(c9);
-
+float4 TESR_GEOM_Toggles : register(c100);
 sampler2D BaseMap : register(s0);
 sampler2D NormalMap : register(s1);
 sampler2D ShadowMap : register(s6);
@@ -20,6 +20,7 @@ sampler2D ShadowMaskMap : register(s7);
 sampler2D TESR_ShadowMapBufferNear : register(s8) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
 sampler2D TESR_ShadowMapBufferFar : register(s9) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
 sampler2D TESR_ShadowMapBufferSkin : register(s10) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
+float4 TESR_SpecularData : register(c101);
 
 // Registers:
 //
@@ -40,6 +41,7 @@ sampler2D TESR_ShadowMapBufferSkin : register(s10) = sampler_state { ADDRESSU = 
 struct VS_OUTPUT {
     float2 BaseUV : TEXCOORD0;
     float3 texcoord_1 : TEXCOORD1_centroid;
+    float3 texcoord_4 : TEXCOORD4_centroid;
 	float4 texcoord_6 : TEXCOORD6;
     float4 texcoord_7 : TEXCOORD7;
     float4 texcoord_8 : TEXCOORD8;
@@ -69,28 +71,45 @@ PS_OUTPUT main(VS_OUTPUT IN) {
     float3 q4;
     float3 q5;
     float4 r0;
-    float3 r3;
+    float3 nl;
     float2 r4 = 0;
     float4 r5;
+    float spec;
+    float shadow;
+    float s;
 
     r0.xyzw = tex2D(NormalMap, IN.BaseUV.xy);
+    s = r0.w;
     r5 = tex2D(BaseMap, r4.xy);
-    r3.xyz = shades(normalize(expand(r0.xyz)), IN.texcoord_1.xyz) * PSLightColor[0].rgb;
+    nl.xyz = shades(normalize(expand(r0.xyz)), IN.texcoord_1.xyz) * PSLightColor[0].rgb;
+    spec = s < 1.0f ? 0 : pow(shades(normalize(expand(r0.xyz)), normalize(IN.texcoord_4.xyz)), 100.0f);
     r0.xyzw = tex2D(BaseMap, IN.BaseUV.xy);
 
-    if (IN.LCOLOR_2.x < -10.0f || (r5.r > .9 && r5.g > .9 && r5.b < .1)) {
-        q2.xyz = max((GetLightAmountSkin(IN.texcoord_9, IN.texcoord_6, IN.texcoord_8) * r3.xyz) + AmbientColor.rgb, 0);
+    if (TESR_GEOM_Toggles.x || (r5.r > .9 && r5.g > .9 && r5.b < .1))
+    {
+        shadow = GetLightAmountSkin(IN.texcoord_9, IN.texcoord_6, IN.texcoord_8);
+        q2.xyz = max((shadow * nl.xyz) + AmbientColor.rgb, 0);
     }
     else {
-        q2.xyz = max((GetLightAmount(IN.texcoord_6, IN.texcoord_7, IN.texcoord_8) * r3.xyz) + AmbientColor.rgb, 0);
+        shadow = GetLightAmount(IN.texcoord_6, IN.texcoord_7, IN.texcoord_8);
+        q2.xyz = max((shadow * nl.xyz) + AmbientColor.rgb, 0);
     }
 
+    float gmr = saturate(r0.g - r0.r);
+    float gmb = saturate(r0.g - r0.b);
+    float rmb = saturate(r0.r - r0.b);
+    float gCoeff = saturate(1 - ((gmr + gmb) * 4));
+    float rCoeff = saturate(1 - ((rmb) * 10));
+    float coeff = min(gCoeff, rCoeff);
+    coeff = min(coeff, TESR_SpecularData.x);
+    float baseIntensity = smoothstep(.25f, 1.0f, length(r0.xyz));
     q3.xyz = (Toggles.x <= 0.0 ? r0.xyz : (r0.xyz * IN.LCOLOR_0.xyz));
+    q3 += (((((coeff * spec) * shadow) * saturate(nl * 2.5f)) * baseIntensity) * 0.9f);
     q4.xyz = q2.xyz * q3.xyz;
     q5.xyz = (Toggles.y <= 0.0 ? q4.xyz : ((IN.LCOLOR_1.w * (IN.LCOLOR_1.xyz - (q3.xyz * q2.xyz))) + q4.xyz));
     OUT.color_0.a = r0.w * AmbientColor.a;
     OUT.color_0.rgb = q5.xyz;
-
+    
     return OUT;
 };
 

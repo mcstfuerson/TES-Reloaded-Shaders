@@ -16,6 +16,7 @@ float4 ShadowProjData : register(c32);
 float4 ShadowProjTransform : register(c33);
 row_major float4x4 TESR_ShadowCameraToLightTransform[2] : register(c34);
 row_major float4x4 TESR_InvViewProjectionTransform : register(c50);
+float4 TESR_GEOM_EyePosition : register(c128);
 
 // Registers:
 //
@@ -57,6 +58,7 @@ struct VS_OUTPUT {
     float2 texcoord_0 : TEXCOORD0;
     float3 texcoord_1 : TEXCOORD1;
     float3 texcoord_2 : TEXCOORD2;
+    float3 texcoord_3 : TEXCOORD3;
     float4 texcoord_4 : TEXCOORD4;
 	float4 texcoord_6 : TEXCOORD6;
     float4 texcoord_7 : TEXCOORD7;
@@ -74,8 +76,13 @@ VS_OUTPUT main(VS_INPUT IN) {
     float3 lit0;
     float3 q12;
     float4 r0;
+    float3 eye4;
+    float3 m12;
+
 
     q12.xyz = mul(float3x3(IN.LTANGENT.xyz, IN.LBINORMAL.xyz, IN.LNORMAL.xyz), LightDirection[0].xyz);
+    eye4.xyz = normalize(normalize(TESR_GEOM_EyePosition.xyz - IN.LPOSITION.xyz) + LightDirection[0].xyz);
+    m12.xyz = mul(float3x3(IN.LTANGENT.xyz, IN.LBINORMAL.xyz, IN.LNORMAL.xyz), eye4.xyz);
     r0 = mul(ModelViewProj, IN.LPOSITION.xyzw);
     lit0.xyz = LightPosition[1].xyz - IN.LPOSITION.xyz;
     OUT.color_0.rgba = IN.LCOLOR_0.xyzw;
@@ -90,6 +97,7 @@ VS_OUTPUT main(VS_INPUT IN) {
     OUT.texcoord_6 = mul(r0, TESR_ShadowCameraToLightTransform[0]);
 	OUT.texcoord_7 = mul(r0, TESR_ShadowCameraToLightTransform[1]);
     OUT.texcoord_8 = mul(r0, TESR_InvViewProjectionTransform);
+    OUT.texcoord_3.xyz = normalize(m12.xyz);
 
     return OUT;
 };

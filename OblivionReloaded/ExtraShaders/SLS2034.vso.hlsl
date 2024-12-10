@@ -55,6 +55,7 @@ struct VS_OUTPUT {
     float2 texcoord_0 : TEXCOORD0;
     float3 texcoord_1 : TEXCOORD1;
     float3 texcoord_3 : TEXCOORD3;
+    float3 texcoord_4 : TEXCOORD4;
     float4 texcoord_6 : TEXCOORD6;
 	float4 texcoord_7 : TEXCOORD7;
     float4 texcoord_8 : TEXCOORD8;
@@ -159,6 +160,7 @@ VS_OUTPUT main(VS_INPUT IN) {
 	OUT.texcoord_7 = mul(r5, TESR_ShadowCameraToLightTransform[1]);
     OUT.texcoord_9 = mul(r5, TESR_ShadowCameraToLightTransformSkin);
     OUT.texcoord_8 = mul(r5, TESR_InvViewProjectionTransform);
+    OUT.texcoord_4 = mul(float3x3(r4.xyz, r3.xyz, q5.xyz), normalize(EyePosition.xyz - r0.xyz));
 
     return OUT;
 };

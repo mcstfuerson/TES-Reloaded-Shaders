@@ -18,6 +18,7 @@ float4 TESR_ShadowData : register(c8);
 float4 TESR_ShadowLightPosition[12] : register(c9);
 sampler2D TESR_ShadowMapBufferNear : register(s8) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
 sampler2D TESR_ShadowMapBufferFar : register(s9) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
+float4 TESR_SpecularData : register(c101);
 
 // Registers:
 //
@@ -41,6 +42,7 @@ struct VS_OUTPUT {
     float2 BaseUV : TEXCOORD0;
     float3 texcoord_1 : TEXCOORD1_centroid;
     float3 texcoord_2 : TEXCOORD2_centroid;
+    float3 texcoord_3 : TEXCOORD3_centroid;
     float4 texcoord_4 : TEXCOORD4;
 	float4 texcoord_6 : TEXCOORD6;
     float4 texcoord_7 : TEXCOORD7;
@@ -74,15 +76,33 @@ PS_OUTPUT main(VS_OUTPUT IN) {
     float3 q9;
     float4 r0;
     float4 r5;
+    float spec;
+    float shadow;
+    float s;
+    float3 nl;
 
+    shadow = GetLightAmount(IN.texcoord_6, IN.texcoord_7, IN.texcoord_8);
     r5.xyzw = tex2D(NormalMap, IN.BaseUV.xy);
+    s = r5.w;
+    spec = s < 1.0f ? 0 : pow(shades(normalize(expand(r5.xyz)), normalize(IN.texcoord_3.xyz)), 100.0f);
     r0.xyzw = tex2D(BaseMap, IN.BaseUV.xy);
     att3.x = tex2D(AttenuationMap, IN.texcoord_4.zw).r;
     att2.x = tex2D(AttenuationMap, IN.texcoord_4.xy).r;
     q1.xyz = normalize(expand(r5.xyz));
     q4.xyz = saturate((1 - att2.x) - att3.x) * (shades(q1.xyz, normalize(IN.texcoord_2.xyz)) * PSLightColor[1].rgb);
+    nl.xyz = shades(q1.xyz, IN.texcoord_1.xyz) * PSLightColor[0].rgb;
+    
+    float gmr = saturate(r0.g - r0.r);
+    float gmb = saturate(r0.g - r0.b);
+    float rmb = saturate(r0.r - r0.b);
+    float gCoeff = saturate(1 - ((gmr + gmb) * 4));
+    float rCoeff = saturate(1 - ((rmb) * 10));
+    float coeff = min(gCoeff, rCoeff);
+    coeff = min(coeff, TESR_SpecularData.x);
+    float baseIntensity = smoothstep(.25f, 1.0f, length(r0.xyz));  
     q8.xyz = (Toggles.x <= 0.0 ? r0.xyz : (r0.xyz * IN.LCOLOR_0.xyz));
-    q6.xyz = (GetLightAmount(IN.texcoord_6, IN.texcoord_7, IN.texcoord_8) * (shades(q1.xyz, IN.texcoord_1.xyz) * PSLightColor[0].rgb)) + q4.xyz;
+    q8.xyz += (((((coeff * spec) * shadow) * saturate(nl * 2.5f)) * baseIntensity));
+    q6.xyz = (shadow * nl) + q4.xyz;
     q7.xyz = max(q6.xyz + AmbientColor.rgb, 0);
     q9.xyz = q7.xyz * q8.xyz;
     q10.xyz = (Toggles.y <= 0.0 ? q9.xyz : ((IN.LCOLOR_1.w * (IN.LCOLOR_1.xyz - (q8.xyz * q7.xyz))) + q9.xyz));

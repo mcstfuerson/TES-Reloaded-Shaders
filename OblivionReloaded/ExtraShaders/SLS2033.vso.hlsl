@@ -49,10 +49,10 @@ struct VS_OUTPUT {
     float2 texcoord_0 : TEXCOORD0;
     float3 texcoord_1 : TEXCOORD1;
     float3 texcoord_3 : TEXCOORD3;
+    float3 texcoord_4 : TEXCOORD4;
     float4 texcoord_6 : TEXCOORD6;
 	float4 texcoord_7 : TEXCOORD7;
     float4 texcoord_8 : TEXCOORD8;
-    float4 color_2 : COLOR2;
 };
 
 // Code:
@@ -71,10 +71,10 @@ VS_OUTPUT main(VS_INPUT IN) {
     OUT.texcoord_0.xy = IN.LTEXCOORD_0.xy;
     OUT.texcoord_1.xyz = normalize(q10.xyz);
     OUT.texcoord_3.xyz = mul(float3x3(IN.LTANGENT.xyz, IN.LBINORMAL.xyz, IN.LNORMAL.xyz), eye4.xyz);
+    OUT.texcoord_4 = mul(float3x3(IN.LTANGENT.xyz, IN.LBINORMAL.xyz, IN.LNORMAL.xyz), normalize(EyePosition.xyz - IN.LPOSITION.xyz));
     OUT.texcoord_6 = mul(r0, TESR_ShadowCameraToLightTransform[0]);
 	OUT.texcoord_7 = mul(r0, TESR_ShadowCameraToLightTransform[1]);
     OUT.texcoord_8 = mul(r0, TESR_InvViewProjectionTransform);
-    OUT.color_2 = -1000.0f;
 
     return OUT;
 };

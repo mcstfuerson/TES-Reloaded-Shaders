@@ -14,9 +14,33 @@ float4 Toggles : register(c7);
 float4 TESR_ShadowData : register(c8);
 float4 TESR_ShadowSkinData : register(c21);
 float4 TESR_ShadowLightPosition[12] : register(c9);
-sampler2D TESR_ShadowMapBufferNear : register(s8) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
-sampler2D TESR_ShadowMapBufferFar : register(s9) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
-sampler2D TESR_ShadowMapBufferSkin : register(s10) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
+sampler2D TESR_ShadowMapBufferNear : register(s8) = sampler_state
+{
+    ADDRESSU = CLAMP;
+    ADDRESSV = CLAMP;
+    MAGFILTER = LINEAR;
+    MINFILTER = LINEAR;
+    MIPFILTER = LINEAR;
+};
+sampler2D TESR_ShadowMapBufferFar : register(s9) = sampler_state
+{
+    ADDRESSU = CLAMP;
+    ADDRESSV = CLAMP;
+    MAGFILTER = LINEAR;
+    MINFILTER = LINEAR;
+    MIPFILTER = LINEAR;
+};
+sampler2D TESR_ShadowMapBufferSkin : register(s10) = sampler_state
+{
+    ADDRESSU = CLAMP;
+    ADDRESSV = CLAMP;
+    MAGFILTER = LINEAR;
+    MINFILTER = LINEAR;
+    MIPFILTER = LINEAR;
+};
+float4 TESR_GEOM_Toggles : register(c100);
+float4 TESR_SpecularData : register(c101);
+
 
 // Registers:
 //
@@ -32,18 +56,20 @@ sampler2D TESR_ShadowMapBufferSkin : register(s10) = sampler_state { ADDRESSU = 
 
 // Structures:
 
-struct VS_OUTPUT {
+struct VS_OUTPUT
+{
     float2 NormalUV : TEXCOORD0;
     float3 texcoord_1 : TEXCOORD1_centroid;
     float3 texcoord_3 : TEXCOORD3_centroid;
+    float3 texcoord_4 : TEXCOORD4_centroid;
     float4 texcoord_6 : TEXCOORD6;
     float4 texcoord_7 : TEXCOORD7;
     float4 texcoord_8 : TEXCOORD8;
     float4 texcoord_9 : TEXCOORD9;
-    float4 LCOLOR_2 : COLOR2;
 };
 
-struct PS_OUTPUT {
+struct PS_OUTPUT
+{
     float4 color_0 : COLOR0;
 };
 
@@ -51,7 +77,8 @@ struct PS_OUTPUT {
 #include "../Shadows/Includes/Shadow.hlsl"
 #include "../Shadows/Includes/ShadowSkin.hlsl"
 
-PS_OUTPUT main(VS_OUTPUT IN) {
+PS_OUTPUT main(VS_OUTPUT IN)
+{
     PS_OUTPUT OUT;
 
 #define	expand(v)		(((v) - 0.5) / 0.5)
@@ -61,22 +88,46 @@ PS_OUTPUT main(VS_OUTPUT IN) {
 #define	weight(v)		dot(v, 1)
 #define	sqr(v)			((v) * (v))
 
+    float3 q18;
     float1 q11;
     float1 q4;
     float3 q7;
     float4 r0;
     float shadow;
-
-    if (IN.LCOLOR_2.x < -10.0f) {
-        shadow = GetLightAmount(IN.texcoord_6, IN.texcoord_7, IN.texcoord_8);
-    }
-    else {
-        shadow = GetLightAmountSkinDialog(IN.texcoord_9, IN.texcoord_6, IN.texcoord_8);
-    }
-
+    float maxSpec = TESR_SpecularData.x; //TODO: Configurable
+    float shine = 100.0f;
+    float3 fresnel;
+    float s;
+    
     r0.xyzw = tex2D(NormalMap, IN.NormalUV.xy);
-    q11.x = r0.w * pow(abs(shades(normalize(expand(r0.xyz)), normalize(IN.texcoord_3.xyz))), Toggles.z);
-    q4.x = dot(normalize(expand(r0.xyz)), normalize(IN.texcoord_1.xyz));
+    s = r0.w;
+    q18.xyz = normalize(expand(r0.xyz));
+    fresnel = saturate(pow(1 - dot(q18.xyz, normalize(IN.texcoord_4.xyz)), 5) * 2);
+    if (TESR_GEOM_Toggles.x)
+    {
+        shadow = GetLightAmountSkinDialog(IN.texcoord_9, IN.texcoord_6, IN.texcoord_8);
+        maxSpec = r0.w;
+        shine = Toggles.z;
+        fresnel *= TESR_SpecularData.y; //TODO: configurable
+    }
+    else
+    {
+        shadow = GetLightAmount(IN.texcoord_6, IN.texcoord_7, IN.texcoord_8);
+        fresnel *= TESR_SpecularData.z; //TODO: configurable
+    }
+    
+    if (TESR_GEOM_Toggles.y)
+    {
+        maxSpec = r0.w;
+        shine = Toggles.z;
+        fresnel *= TESR_SpecularData.z; //STB2009 and STB2015 dont output texcoord_4 for fresnel
+    }
+  
+    q11.x = max(r0.w, maxSpec) * pow(abs(shades(q18.xyz, normalize(IN.texcoord_3.xyz))), shine);
+    
+    fresnel *= q11.x;
+    q11.x += fresnel;
+    q4.x = dot(q18.xyz, IN.texcoord_1.xyz);
     q7.xyz = ((0.2 >= q4.x ? (q11.x * max(q4.x + 0.5, 0)) : q11.x) * PSLightColor[0].rgb) * shadow;
     OUT.color_0.a = weight(q7.xyz);
     OUT.color_0.rgb = saturate(q7.xyz);

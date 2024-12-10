@@ -16,6 +16,8 @@ float4 ShadowProjTransform : register(c33);
 row_major float4x4 TESR_ShadowCameraToLightTransform[2] : register(c34);
 row_major float4x4 TESR_ShadowCameraToLightTransformSkin : register(c50);
 row_major float4x4 TESR_InvViewProjectionTransform : register(c100);
+float4 TESR_ShadowLightDir : register(c99);
+float4 TESR_GEOM_EyePosition : register(c128);
 
 // Registers:
 //
@@ -54,6 +56,7 @@ struct VS_OUTPUT {
     float4 position : POSITION;
     float2 texcoord_0 : TEXCOORD0;
     float3 texcoord_1 : TEXCOORD1;
+    float3 texcoord_4 : TEXCOORD4;
 	float4 texcoord_6 : TEXCOORD6;
     float4 texcoord_7 : TEXCOORD7;
     float4 texcoord_8 : TEXCOORD8;
@@ -67,9 +70,14 @@ VS_OUTPUT main(VS_INPUT IN) {
 
     float3 q6;
     float4 r0;
+    float4 r1;
+    float3 eye4;
+    float3 m12;
 
 	r0 = mul(ModelViewProj, IN.LPOSITION);
 	
+    eye4.xyz = normalize(normalize(TESR_GEOM_EyePosition.xyz - IN.LPOSITION.xyz) + LightDirection[0].xyz);
+    m12.xyz = mul(float3x3(IN.LTANGENT.xyz, IN.LBINORMAL.xyz, IN.LNORMAL.xyz), eye4.xyz);
     q6.xyz = mul(float3x3(IN.LTANGENT.xyz, IN.LBINORMAL.xyz, IN.LNORMAL.xyz), LightDirection[0].xyz);
     OUT.color_0.rgba = IN.LCOLOR_0.xyzw;
     OUT.color_1.a = 1 - saturate((FogParam.x - length(r0.xyz)) / FogParam.y);
@@ -81,6 +89,7 @@ VS_OUTPUT main(VS_INPUT IN) {
 	OUT.texcoord_7 = mul(r0, TESR_ShadowCameraToLightTransform[1]);
     OUT.texcoord_9 = mul(r0, TESR_ShadowCameraToLightTransformSkin);
     OUT.texcoord_8 = mul(r0, TESR_InvViewProjectionTransform);
+    OUT.texcoord_4.xyz = normalize(m12.xyz);
 
     return OUT;
 };
