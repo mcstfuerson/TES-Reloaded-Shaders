@@ -24,7 +24,7 @@ sampler2D DiffuseMap : register(s0);
 struct VS_OUTPUT {
     float2 DiffuseUV : TEXCOORD0;			// partial precision
     float3 texcoord_4 : TEXCOORD4_centroid;			// partial precision
-    float4 texcoord_5 : TEXCOORD5_centroid;			// partial precision
+    float4 texcoord_5 : TEXCOORD5;			// partial precision
     float4 color_0 : COLOR0;
 };
 
@@ -40,11 +40,10 @@ PS_OUTPUT main(VS_OUTPUT IN) {
     float3 q0;
     float4 r0;
 
-    r0.xyzw = tex2D(DiffuseMap, IN.DiffuseUV.xy);			// partial precision
-    q0.xyz = IN.texcoord_5.xyz + IN.texcoord_4.xyz;			// partial precision
+    r0.xyzw = tex2D(DiffuseMap, IN.DiffuseUV.xy);    r0.xyz *= IN.texcoord_5.xyz;			// partial precision
+    q0.xyz = IN.texcoord_4.xyz;			// partial precision
     OUT.color_0.a = (AlphaTestRef.x >= r0.w ? 0 : IN.texcoord_5.w);			// partial precision
     OUT.color_0.rgb = (r0.xyz * q0.xyz) + ((IN.color_0.rgb - (r0.xyz * q0.xyz)) * IN.color_0.a);			// partial precision
-
     return OUT;
 };
 

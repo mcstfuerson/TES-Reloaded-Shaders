@@ -16,6 +16,8 @@ float4 FogColor : register(c10);
 float4 FogParam : register(c11);
 float4 InstanceData[2] : register(c20);
 row_major float4x4 ModelViewProj : register(c0);
+row_major float4x4 TESR_InvViewProjectionTransform : register(c97);
+float4 TESR_TerrainData : register(c255);
 //
 //
 // Registers:
@@ -94,11 +96,12 @@ VS_OUTPUT main(VS_INPUT IN) {
     OUT.color_0.a = 1 - saturate((FogParam.x - length(mdl11.xyz)) / FogParam.y);
     OUT.position.w = dot(ModelViewProj[3].xyzw, r0.xyzw);
     OUT.position.xyz = mdl11.xyz;
+    float4 pos = mul(OUT.position, TESR_InvViewProjectionTransform);
     OUT.texcoord_0.xy = IN.texcoord_0.xy;
     OUT.texcoord_4.w = 1;
     OUT.texcoord_4.xyz = (DiffuseColor.rgb * (r1.w * (dot(DiffuseDir.xyz, q1.xyz) * IN.color_0.rgb))) + AmbientColor.rgb;
     OUT.texcoord_5.w = (AlphaParam.x < eye6.x ? q4.x : 0) + 1;
-    OUT.texcoord_5.xyz = 0;
+    OUT.texcoord_5.xyz = lerp(0.0f, 1.3f, saturate(IN.position.z / 800.0));
 
     return OUT;
 };
