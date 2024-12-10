@@ -2,6 +2,7 @@
 
 float4 TESR_ReciprocalResolution;
 float4 TESR_CinemaData;
+float4 TESR_BloomValues;
 
 sampler2D TESR_RenderedBuffer : register(s0) = sampler_state { ADDRESSU = CLAMP; ADDRESSV = CLAMP; MAGFILTER = LINEAR; MINFILTER = LINEAR; MIPFILTER = LINEAR; };
 	 
@@ -27,7 +28,11 @@ VSOUT FrameVS(VSIN IN)
 
 float4 CinemaPass(VSOUT IN) : COLOR0
 {
-	float3 color = tex2D(TESR_RenderedBuffer, IN.UVCoord).rgb;
+	float3 color = tex2D(TESR_RenderedBuffer, IN.UVCoord).rgb;	
+    float shift = TESR_ReciprocalResolution.xy * TESR_CinemaData.w;
+    float2 center = (IN.UVCoord - 0.5f) * 2;
+    color.r = tex2D(TESR_RenderedBuffer, IN.UVCoord + (center * shift)).r;
+    color.b = tex2D(TESR_RenderedBuffer, IN.UVCoord - (center * shift)).b;
 	
 	if (TESR_CinemaData.y > 0)
 	{
