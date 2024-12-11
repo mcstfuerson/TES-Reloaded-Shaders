@@ -347,14 +347,19 @@ float4 VolumetricLightBaseSky(VSOUT IN) : COLOR0
     float3 currentPosition = startPosition;
     currentPosition += step * DITHER_PATTERN[int(abs(uv.x) * TESR_VolumetricLightData4.z) % 4][int(abs(uv.y) * TESR_VolumetricLightData4.w) % 4];
     float3 accumLight = 0.0f.xxx;
+    float3 baseLightScatter = 0.0f;
 
     for (int i = 0; i < MARCH_NUM; i++)
     {
-        accumLight += (ComputeScatteringSky(dot(rayDirection, TESR_ShadowLightDir)).xxx * ((TESR_VolumetricLightData6.xyz) * TESR_ShadowLightDir.w));
+        float scatter = ComputeScatteringSky(dot(rayDirection, TESR_ShadowLightDir)).xxx;
+        float baseScatter = ComputeScattering(dot(rayDirection, TESR_ShadowLightDir), 0.2f).xxx;
+        accumLight += (scatter * ((TESR_VolumetricLightData6.xyz) * TESR_ShadowLightDir.w));
+        baseLightScatter += baseScatter;
         currentPosition += step;
     }
 
     accumLight /= (MARCH_NUM / 0.4f); //TODO eliminate the magic number here
+    baseLightScatter /= (MARCH_NUM);
 
     float4 pos = float4(TESR_CameraPosition.xyz + shadowCameraVector, 1.0f);
     float baseFogCoeff = saturate(distance(pos, TESR_CameraPosition.xyz) / fullBaseFogDistance) + 1.0f;
@@ -372,8 +377,10 @@ float4 VolumetricLightBaseSky(VSOUT IN) : COLOR0
     {
         baseFogCoeff = 0.0f;
     }
-
-    return float4(color + (baseFogColor * baseFogCoeff), 1.0f);
+    
+    float4 colorNight = float4(color + ((baseFogColor * baseFogCoeff) * 1), 1.0f);
+    float4 colorDay = float4(color + (((baseFogColor * 4) * baseFogCoeff) * baseLightScatter), 1.0f);
+    return lerp(colorNight, colorDay, saturate(TESR_VolumetricLightData6.w));
 
 }
 
@@ -546,33 +553,6 @@ float4 CombineLight(VSOUT IN) : COLOR0
     return float4(Color * (1 - VolumeLight) + VolumeLight, 1.0f);
 }
 
-float4 Blur(VSOUT IN) : COLOR0
-{
-    float3 Color1 = 0;
-    float3 Color2 = 0;
-    float3 VolumeLight = tex2D(TESR_RenderedBuffer, IN.UVCoord);
-    float depth = readDepthShadow(IN.UVCoord);
-    float3 shadowCameraVector = toWorld(IN.UVCoord) * depth;
-    float4 pos = float4(TESR_CameraPosition.xyz + shadowCameraVector, 1.0f);
-    float blurDistance = TESR_VolumetricLightData3.z;
-    float blurCoeff = saturate((distance(pos, TESR_CameraPosition.xyz) / blurDistance));
-    float2 blur[cKernelSize];
-
-    blur = BlurOffsets;
-		
-    for (int i = 0; i < cKernelSize; i++)
-    {
-        Color1 += tex2D(TESR_RenderedBuffer, IN.UVCoord + blur[i] * OffsetMaskH).rgb * BlurWeights[i];
-        Color2 += tex2D(TESR_RenderedBuffer, IN.UVCoord + blur[i] * OffsetMaskV).rgb * BlurWeights[i];
-    }
-
-    Color1 = Color1 - VolumeLight;
-    Color2 = Color2 - VolumeLight;
-
-    VolumeLight.rgb = lerp(VolumeLight, (VolumeLight.rgb + Color1 + Color2), blurCoeff);
-    return float4(VolumeLight, 1.0f);
-}
-
 technique
 {
     pass
@@ -595,10 +575,6 @@ technique
         VertexShader = compile vs_3_0 FrameVS();
         PixelShader = compile ps_3_0 CombineLight();
     }
-    pass
-    {
-        VertexShader = compile vs_3_0 FrameVS();
-        PixelShader = compile ps_3_0 Blur();
-    }
-    
 }
+
+//Gfp
