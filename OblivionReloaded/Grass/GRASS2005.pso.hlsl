@@ -68,6 +68,8 @@ PS_OUTPUT main(VS_OUTPUT IN) {
     float3 q5;
     float3 q6;
     float4 r0;
+    float shadow = GetLightAmountGrass(IN.texcoord_6, mul(IN.texcoord_8, TESR_ShadowCameraToLightTransformFar), mul(IN.texcoord_8, TESR_InvViewProjectionTransform));
+    float dimCoeff = 1.0f;
 
     r0.xyzw = tex2D(DiffuseMap, IN.DiffuseUV.xy);
     att4.x = tex2D(AttMap, IN.texcoord_1.zw);
@@ -77,7 +79,16 @@ PS_OUTPUT main(VS_OUTPUT IN) {
     attCustom0.x = tex2D(AttMap, IN.texcoord_2.xy);
 
 
-    q3.xyz = (GetLightAmountGrass(IN.texcoord_6, mul(IN.texcoord_8, TESR_ShadowCameraToLightTransformFar), mul(IN.texcoord_8, TESR_InvViewProjectionTransform)) * IN.texcoord_5.xyz) + IN.texcoord_4.xyz;
+    q3.xyz = (shadow * IN.texcoord_5.xyz) + IN.texcoord_4.xyz;
+    
+    if (shadow == 0.0f)
+    {
+        dimCoeff = max(0.85f, smoothstep(1.25f, 1.00f, length(r0)));
+
+    }
+    
+    q3.rgb *= dimCoeff;
+    
     q5.xyz = (saturate((1 - att0.x) - att4.x) * (0.4 * PointLightColor.xyz));
     q5.xyz += (saturate((1 - attCustom0.x) - attCustom4.x) * (0.4 * IN.texcoord_3.xyz));
     q5.xyz += q3.xyz;

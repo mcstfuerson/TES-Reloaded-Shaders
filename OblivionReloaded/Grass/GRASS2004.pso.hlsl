@@ -52,11 +52,22 @@ PS_OUTPUT main(VS_OUTPUT IN) {
 
     float3 Color;
     float4 ColorDiffuse;
-
+    float shadow = GetLightAmountGrass(IN.texcoord_6, IN.texcoord_7, mul(IN.texcoord_8, TESR_InvViewProjectionTransform));
+    float dimCoeff = 1.0f;
     ColorDiffuse = tex2D(DiffuseMap, IN.DiffuseUV.xy);
-    Color.rgb = (GetLightAmountGrass(IN.texcoord_6, IN.texcoord_7, mul(IN.texcoord_8, TESR_InvViewProjectionTransform)) * IN.texcoord_5.xyz) + IN.texcoord_4.xyz;
+    Color.rgb = (shadow * IN.texcoord_5.xyz) + IN.texcoord_4.xyz;
+    
+    if (shadow == 0.0f)
+    {
+        dimCoeff = max(0.85f, smoothstep(1.25f, 1.00f, length(ColorDiffuse)));
+
+    }
+    
+    Color.rgb *= dimCoeff;
+    
     OUT.color_0.a = (AlphaTestRef.x >= ColorDiffuse.a ? 0 : IN.texcoord_5.w);
     OUT.color_0.rgb = (ColorDiffuse.rgb * Color.rgb) + ((IN.color_0.rgb - (ColorDiffuse.rgb * Color.rgb)) * IN.color_0.a);
+    
 
     return OUT;
 };
