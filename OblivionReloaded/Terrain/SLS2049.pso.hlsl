@@ -40,9 +40,11 @@ sampler2D TESR_ShadowMapBufferFar : register(s5) = sampler_state { ADDRESSU = CL
 
 struct VS_OUTPUT {
     float2 BaseUV : TEXCOORD0;
-    float2 NormalUV : TEXCOORD1;
+    //float2 NormalUV : TEXCOORD1;
     float3 texcoord_2 : TEXCOORD2_centroid;
     float3 texcoord_3 : TEXCOORD3_centroid;
+    float3 texcoord_4 : TEXCOORD4_centroid;
+    float3 texcoord_5 : TEXCOORD5_centroid;
     float4 texcoord_6 : TEXCOORD6;
 	float4 texcoord_7 : TEXCOORD7;
     float4 texcoord_8 : TEXCOORD8;
@@ -68,15 +70,36 @@ PS_OUTPUT main(VS_OUTPUT IN) {
     float3 r0;
     float4 r3;
 	float spclr;
-	
-    r0.xyz = tex2D(NormalMap, IN.NormalUV.xy).xyz;
+    float4 r1;
+    float4 r2;
+    float3 q18;
+    float shadow;
+    float nl;
+    float3 fresnel;
+    
+    r1.xyzw = tex2D(NormalMap, IN.BaseUV.xy);
+    q18.xyz = normalize(expand(r1.xyz));
+    fresnel = saturate(pow(1 - dot(q18.xyz, normalize(IN.texcoord_5.xyz)), 10) * 2);
+    r2.w = pow(shades(q18.xyz, normalize(IN.texcoord_4.xyz)), 10.0f);
+    fresnel *= r2.w;
+    r2.w += fresnel;
+    r0.xyz = tex2D(NormalMap, IN.BaseUV.xy).xyz;
     r3.xyz = tex2D(BaseMap, IN.BaseUV.xy).xyz;
-	r0.x = shades((IN.texcoord_3.xyz * 2) - 1, normalize(expand(r0.xyz)));
-    r0.xyz = r3.xyz * ((GetLightAmount(IN.texcoord_6, IN.texcoord_7, IN.texcoord_8) * (r0.x * PSLightColor[0].rgb)) + AmbientColor.rgb);
+    nl = shades((IN.texcoord_3.xyz * 2) - 1, normalize(expand(r0.xyz)));
+    shadow = GetLightAmount(IN.texcoord_6, IN.texcoord_7, IN.texcoord_8);
+    r0.xyz = r3.xyz * ((shadow * (nl * PSLightColor[0].rgb)) + AmbientColor.rgb);
 	q0 = dot(PSLightColor[1].rgba, IN.color_0.rgba) + dot(PSLightColor[2].rgba, IN.color_1.rgba);
 	spclr = smoothstep(0.0, 0.25, length(r3.rgb)) * (r3.b * 2.0 * TESR_TerrainData.z) + 1.0;
     OUT.color_0.a = saturate(((q0 * 2) + 0.5) - 1);
-    OUT.color_0.rgb = r0.xyz * IN.texcoord_2.xyz * spclr;
+    OUT.color_0.rgb = r0.xyz * IN.texcoord_2.xyz;
+    float gmr = saturate(r3.g - r3.r);
+    float gmb = saturate(r3.g - r3.b);
+    float rmb = saturate(r3.r - r3.b);
+    float gCoeff = saturate(1 - ((gmr + gmb) * 4));
+    float rCoeff = saturate(1 - ((rmb) * 10));
+    float coeff = min(gCoeff, rCoeff);
+    float baseIntensity = smoothstep(.25f, 1.0f, length(r3.xyz));
+    OUT.color_0.rgb += ((((PSLightColor[0].rgb * (coeff * r2.w) * shadow) * saturate(nl * 2.5f)) * baseIntensity) * TESR_TerrainData.z);
     return OUT;
 };
 
