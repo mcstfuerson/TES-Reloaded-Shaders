@@ -42,6 +42,7 @@ struct VS_INPUT {
 
 struct VS_OUTPUT {
     float4 Fog : COLOR1;
+    float4 DistanceNoise : COLOR2;
     float4 Position : POSITION;
     float2 BaseUV : TEXCOORD0;
     float3 Light0Dir : TEXCOORD1;
@@ -79,6 +80,11 @@ VS_OUTPUT main(VS_INPUT IN) {
     mdl24.xyz = mul(float3x4(ModelViewProj[0].xyzw, ModelViewProj[1].xyzw, ModelViewProj[2].xyzw), r0.xyzw);
     OUT.Fog.rgb = FogColor.rgb;
     OUT.Fog.a = 1 - saturate((FogParam.x - length(mdl24.xyz)) / FogParam.y);
+    OUT.DistanceNoise.xyz = 0;
+    OUT.DistanceNoise.x = mdl24.x;
+    OUT.DistanceNoise.y = mdl24.z;
+    OUT.DistanceNoise.b = 1 - saturate((25000 - length(mdl24.xyz)) / 25000);
+    OUT.DistanceNoise.a = 1 - saturate((100000 - length(mdl24.xyz)) / 100000);
     OUT.Position.w = dot(ModelViewProj[3].xyzw, r0.xyzw);
     OUT.Position.xyz = mdl24.xyz;
     OUT.BaseUV.xy = IN.BaseUV.xy;

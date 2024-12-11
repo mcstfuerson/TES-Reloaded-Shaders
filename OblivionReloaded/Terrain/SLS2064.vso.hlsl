@@ -6,6 +6,7 @@
 //
 // Parameters:
 //
+float4 EyePosition : register(c25);
 float3 LightDirection[3] : register(c13);
 row_major float4x4 ModelViewProj : register(c0);
 float4 ShadowProjData : register(c24);
@@ -38,6 +39,7 @@ struct VS_INPUT {
 struct VS_OUTPUT {
     float4 color_0 : COLOR0;
     float4 color_1 : COLOR1;
+    float4 DistanceNoise : COLOR2;
     float4 position : POSITION;
     float2 texcoord_0 : TEXCOORD0;
     float2 texcoord_1 : TEXCOORD1;
@@ -57,6 +59,9 @@ VS_OUTPUT main(VS_INPUT IN) {
     OUT.color_0.rgba = IN.texcoord_1.xyzw;
     OUT.color_1.rgba = IN.texcoord_2.xyzw;
     OUT.position.xyzw = mul(ModelViewProj, IN.position.xyzw);
+    OUT.DistanceNoise.xyz = 0;
+    OUT.DistanceNoise.b = 1 - saturate((25000 - length(OUT.position.xyz)) / 25000);
+    OUT.DistanceNoise.a = 1 - saturate((100000 - length(OUT.position.xyz)) / 100000);
     q1.xy = (IN.texcoord_0.xy / 512) + ShadowProjTransform.xy;
     OUT.texcoord_0.xy = q1.xy;
     OUT.texcoord_1.xy = q1.xy;

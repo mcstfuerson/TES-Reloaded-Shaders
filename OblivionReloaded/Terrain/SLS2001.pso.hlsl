@@ -13,7 +13,6 @@ float4 PSLightColor[4] : register(c2);
 sampler2D NoiseMap : register(s6);
 float4 Toggles : register(c7);
 float4 TESR_TerrainData : register(c8);
-
 sampler2D TESR_samplerNoise : register(s10) < string ResourceName = "Effects\TerrainNoise_n.dds"; > = sampler_state { ADDRESSU = WRAP; ADDRESSV = WRAP; MAGFILTER = LINEAR; MINFILTER = MINDEF; MIPFILTER = MIPDEF; };
 
 //
@@ -36,6 +35,7 @@ sampler2D TESR_samplerNoise : register(s10) < string ResourceName = "Effects\Ter
 
 struct VS_OUTPUT {
     float4 Fog : COLOR1;
+    float4 DistanceNoise : COLOR2;
     float2 BaseUV : TEXCOORD0;
     float3 Light0Dir : TEXCOORD1_centroid;
     float3 Location : TEXCOORD3_centroid;
@@ -61,8 +61,7 @@ PS_OUTPUT main(VS_OUTPUT IN) {
     float4 r0;
     float3 r1;
     float4 r2;
-    float spclr;
-
+    
     // SMOOTH NORMALS
 
     r2.xyzw = tex2D(TESR_samplerNormalMap, IN.BaseUV.xy);
@@ -102,22 +101,27 @@ PS_OUTPUT main(VS_OUTPUT IN) {
     r1.x = saturate(0.50 + 1.25 * (smoothstep(1.0, 0.0, pow(noisec.x, 0.5))));
     r1.xyz = lerp(r1.x, 1, pow(length(r0.rgb) / length(1), 2));
 
-    float3 noisen = expand(tex2D(TESR_samplerNoise, IN.BaseUV.xy * 40).xyz);
-    r2.xyz = normalize(r2.xyz + float3(noisen.xy * TESR_TerrainData.y, 0));
+    float3 noisen = expand(tex2D(TESR_samplerNoise, IN.BaseUV.xy * 40.0f).xyz); //TODO: CONFIGURABLE?
+    float3 noisen2 = expand(tex2D(TESR_samplerNoise, IN.BaseUV.xy * 20.0f).xyz); //TODO: CONFIGURABLE?
+    noisen = (noisen + noisen2) / 2;
 
-    float3 LightDir = IN.Light0Dir.xyz;
-    //LightDir.x = LightDir.x < 0.4 ? max(LightDir.y, 0.8) : LightDir.x; // Trick to avoid to flat the bumpmap when midday
-
-    q0.xyz = (shades(r2.xyz, LightDir.xyz) * PSLightColor[0].rgb) + AmbientColor.rgb;
+    float noiseStrength = lerp(0.65f, lerp(TESR_TerrainData.y, TESR_TerrainData.y * 13, IN.DistanceNoise.a), IN.DistanceNoise.b);
+    r2.xyz = normalize(r2.xyz + float3(noisen.xy * noiseStrength, 0));
+    
+    float3 n = shades(r2.xyz, IN.Light0Dir.xyz);
+    float mod1 = smoothstep(0.6f, 0.95f, n.x); //TODO: CONFIGURABLE?
+    float mod2 = smoothstep(0.4f, 0.95f, n.x); //TODO: CONFIGURABLE?
+    float mod = lerp(mod2, mod1, IN.DistanceNoise.b);
+    mod = max(mod, 0.5f); //TODO: CONFIGURABLE?
+    mod = lerp(1, mod, smoothstep(.65f, .9f, IN.Light0Dir.z));
+    n *= mod;
+    q0.xyz = n * PSLightColor[0].rgb + AmbientColor.rgb;
     q1.xyz = r0.xyz * max(q0.xyz, 0);
     q1.xyz = q1.xyz * r1.x;
     q1.xyz = (Toggles.y <= 0.0 ? q1.xyz : ((IN.Fog.a * (IN.Fog.rgb - q1.xyz)) + q1.xyz));
 
-    spclr = smoothstep(0.0, 0.25, length(r0.rgb)) * (r0.b * 2.0 * TESR_TerrainData.x) + 1.0;
-
     OUT.Color.a = (0.1 - IN.FarClip) * AmbientColor.a;
-    OUT.Color.rgb = q1.xyz * spclr;
-
+    OUT.Color.rgb = q1.xyz;
     return OUT;
 };
 
