@@ -104,7 +104,7 @@ PS_OUTPUT main(VS_OUTPUT IN) {
     float gCoeff = saturate(1 - ((gmr + gmb) * 4));
     float rCoeff = saturate(1 - ((rmb) * 10));
     float coeff = min(gCoeff, rCoeff);
-    coeff = min(coeff, TESR_SpecularData.x);
+    coeff = min(coeff * 2.0f, TESR_SpecularData.x);
     float baseIntensity = smoothstep(.25f, 1.0f, length(r0.xyz));
     float3 specColor1 = (((((coeff * spec) * shadow) * saturate(nl * 2.5f)) * baseIntensity));
     float3 specColor2 = ((((PSLightColor[0].rgb * (coeff * spec) * shadow) * saturate(nl * 2.5f)) * baseIntensity));
