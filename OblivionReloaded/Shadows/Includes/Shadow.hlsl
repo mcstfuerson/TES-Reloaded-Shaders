@@ -57,7 +57,13 @@ float GetLightAmountFarLeaves(float4 ShadowPos) {
 	ShadowPos.xyz /= ShadowPos.w;
 	ShadowPos.x = ShadowPos.x * 0.5f + 0.5f;
 	ShadowPos.y = ShadowPos.y * -0.5f + 0.5f;
-	Shadow = LookupFarLeaves(ShadowPos);
+	
+    for (uint s = 0; s < SAMPLE_NUM_LEAVES_FAR; s++)
+    {
+        ShadowPos.xy += (POISSON_SAMPLES[s] * RADIUS_LEAVES_FAR);
+        Shadow += LookupFarLeaves(ShadowPos);
+    }
+    Shadow /= SAMPLE_NUM_LEAVES_FAR;
 
 	return Shadow;
 
@@ -123,7 +129,13 @@ float GetLightAmountLeaves(float4 ShadowPos, float4 ShadowPosFar, float4 InvPos)
 
 	ShadowPos.x = ShadowPos.x * 0.5f + 0.5f;
 	ShadowPos.y = ShadowPos.y * -0.5f + 0.5f;
-	Shadow = LookupLeaves(ShadowPos);
+	
+    for (uint s = 0; s < SAMPLE_NUM_LEAVES; s++)
+    {
+        ShadowPos.xy += (POISSON_SAMPLES[s] * RADIUS_LEAVES);
+        Shadow += LookupLeaves(ShadowPos);
+    }
+    Shadow /= SAMPLE_NUM_LEAVES;
 
 	for (int i = 0; i < 12; i++) {
 		if (TESR_ShadowLightPosition[i].w) {
@@ -152,7 +164,14 @@ float GetLightAmountFarGrass(float4 ShadowPos) {
 	ShadowPos.xyz /= ShadowPos.w;
 	ShadowPos.x = ShadowPos.x * 0.5f + 0.5f;
 	ShadowPos.y = ShadowPos.y * -0.5f + 0.5f;
-	Shadow = LookupFar(ShadowPos);
+    for (uint s = 0; s < SAMPLE_NUM_GRASS_FAR; s++)
+    {
+        ShadowPos.xy += (POISSON_SAMPLES[s] * RADIUS_GRASS_FAR);
+        Shadow += LookupFar(ShadowPos);
+    }
+
+    Shadow /= SAMPLE_NUM_GRASS_FAR;
+	
 	return Shadow;
 
 }
@@ -172,7 +191,12 @@ float GetLightAmountGrass(float4 ShadowPos, float4 ShadowPosFar, float4 InvPos) 
 
 	ShadowPos.x = ShadowPos.x * 0.5f + 0.5f;
 	ShadowPos.y = ShadowPos.y * -0.5f + 0.5f;
-	Shadow = Lookup(ShadowPos);
+    for (uint s = 0; s < SAMPLE_NUM_GRASS; s++)
+    {
+        ShadowPos.xy += (POISSON_SAMPLES[s] * RADIUS_GRASS);
+        Shadow += Lookup(ShadowPos);
+    }
+    Shadow /= SAMPLE_NUM_GRASS;
 
 	for (int i = 0; i < 12; i++) {
 		if (TESR_ShadowLightPosition[i].w) {

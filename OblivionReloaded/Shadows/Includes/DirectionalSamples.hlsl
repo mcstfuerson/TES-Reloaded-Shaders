@@ -3,8 +3,16 @@
 //TODO: all radius should be resolution dependent but these are good enough for now
 static const float RADIUS = 6.0f / 8000.0f;
 static const float RADIUS_FAR = 2.0f / 8000.0f;
+static const float RADIUS_LEAVES = 6.0f / 8000.0f;
+static const float RADIUS_LEAVES_FAR = 2.0f / 8000.0f;
+static const float RADIUS_GRASS = 10.0f / 8000.0f;
+static const float RADIUS_GRASS_FAR = 6.0f / 8000.0f;
 static const uint SAMPLE_NUM = 16;
 static const uint SAMPLE_NUM_FAR = 9;
+static const uint SAMPLE_NUM_GRASS = 16;
+static const uint SAMPLE_NUM_GRASS_FAR = 9;
+static const uint SAMPLE_NUM_LEAVES = 16;
+static const uint SAMPLE_NUM_LEAVES_FAR = 9;
 static const uint SAMPLE_TOTAL = 64;
 static const float2 POISSON_SAMPLES[SAMPLE_TOTAL] =
 {
