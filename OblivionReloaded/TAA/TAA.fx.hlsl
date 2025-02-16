@@ -186,7 +186,7 @@ float4 Resolve(VSOUT IN) : COLOR0
         [unroll(3)]
         for (float y = -offset; y <= offset; y += offset)
         {
-            float3 neighborColor = tex2D(TESR_SourceBuffer, (IN.UVCoord + saturate(float2(x, y)) * TESR_ReciprocalResolution.xy));
+            float3 neighborColor = tex2D(TESR_SourceBuffer, (IN.UVCoord + float2(x, y) * TESR_ReciprocalResolution.xy));
             minColor = min(minColor, neighborColor);
             maxColor = max(maxColor, neighborColor);
         }
