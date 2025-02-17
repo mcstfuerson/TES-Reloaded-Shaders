@@ -9,10 +9,10 @@ static const float RADIUS_GRASS = 10.0f / 8000.0f;
 static const float RADIUS_GRASS_FAR = 6.0f / 8000.0f;
 static const uint SAMPLE_NUM = 16;
 static const uint SAMPLE_NUM_FAR = 9;
-static const uint SAMPLE_NUM_GRASS = 16;
-static const uint SAMPLE_NUM_GRASS_FAR = 9;
-static const uint SAMPLE_NUM_LEAVES = 16;
-static const uint SAMPLE_NUM_LEAVES_FAR = 9;
+static const uint SAMPLE_NUM_GRASS = 3;
+static const uint SAMPLE_NUM_GRASS_FAR = 1;
+static const uint SAMPLE_NUM_LEAVES = 1;
+static const uint SAMPLE_NUM_LEAVES_FAR = 1;
 static const uint SAMPLE_TOTAL = 64;
 static const float2 POISSON_SAMPLES[SAMPLE_TOTAL] =
 {
@@ -83,7 +83,7 @@ float2(0.221339403145f, -0.413210697297f),
 };
 
 static float RADIUS_SKIN = 1.0f / 2100.0f;
-static const uint SAMPLE_NUM_SKIN = 70;
+static const uint SAMPLE_NUM_SKIN = 35;
 static const uint SAMPLE_SKIN_TOTAL = 120;
 static const float2 POISSON_SAMPLES_SKIN[SAMPLE_SKIN_TOTAL] =
 {
