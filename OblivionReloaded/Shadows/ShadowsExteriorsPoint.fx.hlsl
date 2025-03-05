@@ -3,6 +3,7 @@
 float4x4 TESR_WorldTransform;
 float4x4 TESR_ViewTransform;
 float4x4 TESR_ProjectionTransform;
+float4x4 TESR_InvViewProjectionTransform;
 float4 TESR_CameraPosition;
 float4 TESR_WaterSettings;
 float4 TESR_ShadowCubeData;
@@ -185,12 +186,12 @@ float readDepth(in float2 coord : TEXCOORD0)
     return posZ;
 }
 
-float3 toWorld(float2 tex)
+float3 toWorld(float2 uv)
 {
-    float3 v = float3(TESR_ViewTransform[0][2], TESR_ViewTransform[1][2], TESR_ViewTransform[2][2]);
-    v += (1 / TESR_ProjectionTransform[0][0] * (2 * tex.x - 1)).xxx * float3(TESR_ViewTransform[0][0], TESR_ViewTransform[1][0], TESR_ViewTransform[2][0]);
-    v += (-1 / TESR_ProjectionTransform[1][1] * (2 * tex.y - 1)).xxx * float3(TESR_ViewTransform[0][1], TESR_ViewTransform[1][1], TESR_ViewTransform[2][1]);
-    return v;
+    float4 positionNCD = float4((uv) * 2.0f - 1.0f, 1.0f, 1.0f);
+    positionNCD.y *= -1.0f;
+    float4 positionWS = mul(positionNCD, TESR_InvViewProjectionTransform);
+    return positionWS.xyz;
 }
 
 float Lookup(samplerCUBE buffer, float3 LightDir, float Distance, float Blend)
