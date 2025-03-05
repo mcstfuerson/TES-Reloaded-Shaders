@@ -163,7 +163,7 @@ float4 SampleTextureCatmullRom(in sampler2D tex, in float2 uv, in float2 texSize
 }
 
 float4 Resolve(VSOUT IN) : COLOR0
-{ 
+{
     float4 worldPos = getWorldPos(IN.UVCoord);
     float2 reprojectedUV = getReprojectUV(worldPos);
 
@@ -177,7 +177,7 @@ float4 Resolve(VSOUT IN) : COLOR0
     
     float depth = readDepth(IN.UVCoord);
     float dist = distance(worldPos.xyz, TESR_CameraPosition.xyz);
-    float offset = lerp(0, TESR_TAAData.y, saturate(dist / 800.0f));
+    float offset = lerp(0.15f, TESR_TAAData.y, saturate(dist / 800.0f));
     
     float3 minColor = 9999.0, maxColor = -9999.0;
     [unroll(3)]
@@ -195,18 +195,10 @@ float4 Resolve(VSOUT IN) : COLOR0
     previousColor = clamp(previousColor, minColor, maxColor);
     
     float3 color;
-    float distMin = 50.0f;
     float weightPrevious = TESR_TAAData.x;
     float weightCurrent = 1 - weightPrevious;
-
-    if (dist < distMin)
-    {
-        color = currentColor;       
-    }
-    else
-    {      
-        color = previousColor * weightPrevious + currentColor * weightCurrent;
-    }
+ 
+    color = previousColor * weightPrevious + currentColor * weightCurrent;
     
     return float4(color, 1.0f);
 }
